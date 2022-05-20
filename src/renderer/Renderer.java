@@ -18,9 +18,10 @@ import com.jogamp.opengl.GL2;
 
 public class Renderer {
     public Shader activeShader;
+    private boolean needToReloadShaders;
 
     private final Scene scene;
-    private final MainForm form;
+    private final MainForm mainForm;
 
     private boolean cullFace;
     private boolean depthTest;
@@ -41,21 +42,26 @@ public class Renderer {
     boolean needToReuploadTexture;
 
     public MainForm getForm() {
-        return form;
+        return mainForm;
     }
 
     public Renderer(Scene scene, MainForm form) {
-        needToReuploadTexture = false;
         this.scene = scene;
-        this.form = form;
+        this.mainForm = form;
+        needToReuploadTexture = false;
+        needToReloadShaders = false;
     }
 
     public void init(GL2 gl, int w, int h) {
-        resources = new Resources(gl);
+        resources = new Resources(this.mainForm, gl, this);
 
         gl.glClearColor(0, 0, 0.0f, 1);
 
         reshape(gl, w, h);
+    }
+    
+    public void reloadShaders() {
+        needToReloadShaders = true;
     }
 
     public void reshape(GL2 gl, int w, int h) {
@@ -76,6 +82,11 @@ public class Renderer {
     }
 
     private void preRender(GL2 gl) {
+        if (needToReloadShaders) {
+            needToReloadShaders = false;
+            resources.reloadShaders(gl);
+        }
+
         // tick the entities in case that they needed something to do, (probably not)
         for (Entity e : scene.getEntities()) {
             e.update(scene);
@@ -112,7 +123,7 @@ public class Renderer {
         Matrix4f viewModel = tv.tempMat42;
         Matrix4f projectionViewModel = tv.tempMat43;
 
-        synchronized (form) {
+        synchronized (mainForm) {
             calcDistanceToCameraOfEntities();
             sortEntities();
 
@@ -127,7 +138,7 @@ public class Renderer {
                 gl.glUseProgram(activeShader.shaderProgramID);
                 gl.glUniform1i(activeShader.texDiffuse, 0);
 
-                activeShader.changeGLStatus(this, form.scene, me);
+                activeShader.changeGLStatus(gl, this, mainForm.scene, me);
 
                 // check for negative scale
                 boolean usesCull = true;
@@ -140,14 +151,14 @@ public class Renderer {
                 view.mult(model, viewModel);
                 projection.mult(viewModel, projectionViewModel);
 
-                activeShader.bindAttribs(form.scene, me);
+                activeShader.bindAttribs(gl, mainForm.scene, me);
 
-                activeShader.bindUniforms(scene, this, form.scene, me, projectionViewModel, viewModel, model,
+                activeShader.bindUniforms(gl, scene, this, mainForm.scene, me, projectionViewModel, viewModel, model,
                         tv.floatBuffer16);
 
-                activeShader.render(form.scene, me);
+                activeShader.render(gl, mainForm.scene, me);
 
-                activeShader.unbindAttribs(form.scene, me);
+                activeShader.unbindAttribs(gl, mainForm.scene, me);
             }
         }
 

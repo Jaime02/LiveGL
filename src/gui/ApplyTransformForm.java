@@ -6,10 +6,10 @@ import scene.Entity;
 
 
 public class ApplyTransformForm extends javax.swing.JFrame {
-    final MainForm mf;
+    final MainForm mainForm;
     
-    public ApplyTransformForm(MainForm mf) {
-        this.mf = mf;
+    public ApplyTransformForm(MainForm mainForm) {
+        this.mainForm = mainForm;
         initComponents();
     }
 
@@ -78,13 +78,13 @@ public class ApplyTransformForm extends javax.swing.JFrame {
             t.invertLocal();
         }
         
-        for(Entity e : mf.scene.getEntities()){
+        for(Entity e : mainForm.scene.getEntities()){
             if( (e.getTag() & (Entity.TAG_TRANSDUCER | Entity.TAG_CONTROL_POINT )) != 0){
                 e.getTransform().combineWithParent(t);
             }
         }
         
-        mf.needUpdate();
+        mainForm.needUpdate();
     }
 
 

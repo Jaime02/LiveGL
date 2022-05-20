@@ -19,12 +19,12 @@ import javax.swing.GroupLayout;
 import javax.swing.JButton;
 
 public class MovePanel extends javax.swing.JPanel {
-    final MainForm mf;
+    final MainForm mainForm;
     final ArrayList<Vector3f> snapBeadPositions = new ArrayList<>();
     final HashMap<Integer, ArrayList<Entity>> selections = new HashMap<>();
 
-    public MovePanel(MainForm mf) {
-        this.mf = mf;
+    public MovePanel(MainForm mainForm) {
+        this.mainForm = mainForm;
 
         jLabel3 = new javax.swing.JLabel();
         speedText = new javax.swing.JTextField();
@@ -217,7 +217,7 @@ public class MovePanel extends javax.swing.JPanel {
     }
 
     public void snapSelection(final int n) {
-        final ArrayList<Entity> sel = new ArrayList<>(mf.selectedEntities);
+        final ArrayList<Entity> sel = new ArrayList<>(mainForm.selectedEntities);
         selections.put(n, sel);
     }
 
@@ -225,7 +225,7 @@ public class MovePanel extends javax.swing.JPanel {
         final int n = 0;
 
         // check bead number n in selection
-        final ArrayList<Entity> sel = mf.selectedEntities;
+        final ArrayList<Entity> sel = mainForm.selectedEntities;
         if (n < 0 || n >= sel.size()) {
             return null;
         }
@@ -243,8 +243,8 @@ public class MovePanel extends javax.swing.JPanel {
 
         e.getTransform().getTranslation().addLocal(t);
 
-        mf.transformToGUI(e.getTransform());
-        mf.needUpdate();
+        mainForm.transformToGUI(e.getTransform());
+        mainForm.needUpdate();
     }
 
     public void applyRotationRepeat(float rx, float ry, float rz) {
@@ -253,7 +253,7 @@ public class MovePanel extends javax.swing.JPanel {
 
     public void applyRotation(float rx, float ry, float rz) {
         final Entity e = getBeadEntity();
-        if (e == null || mf.selectedEntities.isEmpty()) {
+        if (e == null || mainForm.selectedEntities.isEmpty()) {
             return;
         }
 
@@ -262,17 +262,17 @@ public class MovePanel extends javax.swing.JPanel {
         ry *= M.DEG_TO_RAD * angles;
         rz *= M.DEG_TO_RAD * angles;
 
-        final Vector3f selectionCenter = Scene.calcCenter(mf.selectedEntities);
+        final Vector3f selectionCenter = Scene.calcCenter(mainForm.selectedEntities);
 
         e.rotateAround(selectionCenter, rx, ry, rz);
 
-        mf.transformToGUI(e.getTransform());
-        mf.needUpdate();
+        mainForm.transformToGUI(e.getTransform());
+        mainForm.needUpdate();
     }
 
     public void applyScale(final float stepScale) {
         final Entity e = getBeadEntity();
-        if (e == null || mf.selectedEntities.isEmpty()) {
+        if (e == null || mainForm.selectedEntities.isEmpty()) {
             return;
         }
 
@@ -280,10 +280,10 @@ public class MovePanel extends javax.swing.JPanel {
 
         final Vector3f pos = e.getTransform().getTranslation();
         // sCenter.y = pos.y;
-        pos.moveTowards(mf.scene.getSimulationCenter(), stepSize);
+        pos.moveTowards(mainForm.scene.getSimulationCenter(), stepSize);
 
-        mf.transformToGUI(e.getTransform());
-        mf.needUpdate();
+        mainForm.transformToGUI(e.getTransform());
+        mainForm.needUpdate();
     }
 
     private void leftButtonActionPerformed(java.awt.event.ActionEvent evt) {
@@ -319,7 +319,7 @@ public class MovePanel extends javax.swing.JPanel {
     }
 
     public void resetParticlePos() {
-        final ArrayList<Entity> sel = mf.selectedEntities;
+        final ArrayList<Entity> sel = mainForm.selectedEntities;
         final int n = M.min(sel.size(), snapBeadPositions.size());
         for (int i = 0; i < n; ++i) {
             sel.get(i).getTransform().getTranslation().set(snapBeadPositions.get(i));
@@ -329,12 +329,12 @@ public class MovePanel extends javax.swing.JPanel {
     }
 
     public void selectFirstBead() {
-        Entity e = mf.scene.getFirstWithTag(Entity.TAG_CONTROL_POINT);
+        Entity e = mainForm.scene.getFirstWithTag(Entity.TAG_CONTROL_POINT);
         if (e == null) {
             return;
         }
-        mf.clearSelection();
-        mf.selectedEntities.add(e);
+        mainForm.clearSelection();
+        mainForm.selectedEntities.add(e);
         e.selected = true;
     }
 

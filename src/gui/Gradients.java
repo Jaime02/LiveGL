@@ -57,14 +57,14 @@ public class Gradients {
                 (float) Math.min(Math.max(3.0*ip, 0),1) ,
                 (float) Math.min(Math.max(3.0*ip-1, 0),1) ,
                 (float) Math.min(Math.max(3.0*ip-2, 0),1) );
-            gradientFire[i] = utils.Color.argb2rgba( fireColor.getRGB() );
+            gradientFire[i] = utils.CustomColor.argb2rgba( fireColor.getRGB() );
             
-            gradientHue[i] = utils.Color.argb2rgba( 
+            gradientHue[i] = utils.CustomColor.argb2rgba( 
                     Color.HSBtoRGB(ip, 1.0f, 1.0f) 
             );
             
             for(int j = 0; j < GRADIENT_RES; ++j){
-                gradientHB[i][j] = utils.Color.argb2rgba( 
+                gradientHB[i][j] = utils.CustomColor.argb2rgba( 
                         Color.HSBtoRGB(ip, 1.0f, j / (float)GRADIENT_RES)
                 );
             }

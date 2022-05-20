@@ -5,12 +5,12 @@ import javax.swing.GroupLayout;
 
 public class TextFrame extends javax.swing.JFrame {
 
-    public static void showText(String title, String text, Component father){
+    public static void showText(String title, String text, Component father) {
         TextFrame tf = new TextFrame(title, text);
         tf.setLocationRelativeTo(father);
         tf.setVisible(true);
     }
-    
+
     public TextFrame(String title, String text) {
         super(title);
         initComponents();
@@ -39,22 +39,16 @@ public class TextFrame extends javax.swing.JFrame {
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(10, 10, 10)
-                .addComponent(closeButton, GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
-                .addContainerGap())
-            .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE)
-        );
+        layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup().addGap(10, 10, 10)
+                        .addComponent(closeButton, GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE).addContainerGap())
+                .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE));
         layout.setVerticalGroup(
-            layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 260, Short.MAX_VALUE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(closeButton)
-                .addContainerGap())
-        );
+                layout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(GroupLayout.Alignment.TRAILING,
+                        layout.createSequentialGroup()
+                                .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 260, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(closeButton).addContainerGap()));
 
         pack();
     }

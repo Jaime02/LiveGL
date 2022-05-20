@@ -10,10 +10,7 @@ uniform mat4 modelMatrix;
 
 void main()
 {
-    
     gl_Position = modelViewProjectionMatrix * vertexPosition;
-
     normal = modelMatrix * vec4(vertexNormal.xyz, 0.0);
-    
     wPos = modelMatrix * vertexPosition;
 }

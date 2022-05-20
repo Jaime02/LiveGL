@@ -9,7 +9,6 @@ uniform float diffuse;
 
 void main()
 {
-
     vec3 N = normalize(normal.xyz);
     vec3 L = normalize(lightPos.xyz - wPos.xyz);
     float lambertTerm = abs( dot(N,L) );

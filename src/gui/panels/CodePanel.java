@@ -9,31 +9,45 @@ import gui.MainForm;
 import renderer.Shader;
 import scene.Resources;
 import javax.swing.GroupLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 
 public class CodePanel extends JPanel {
-    public MainForm mf;
+    public MainForm mainForm;
 
     JPanel mainPanel;
     GroupLayout mainLayout;
-    JCheckBox liveMode;
     public JComboBox<String> shaderComboBox;
 
-    RSyntaxTextArea fragmentShaderEditor, vertexShaderEditor;
+    public RSyntaxTextArea fragmentShaderEditor, vertexShaderEditor;
+    public JCheckBox liveMode;
 
-    public CodePanel(MainForm mf) {
-        this.mf = mf;
+    public CodePanel(MainForm mainForm) {
+        this.mainForm = mainForm;
 
         mainLayout = new GroupLayout(this);
         setLayout(mainLayout);
+        
+        liveMode = new JCheckBox("Live Mode");
+        JButton compileButton = new JButton("Compile shaders");
+        compileButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mainForm.renderer.activeShader.updateFragmentShaderSourceCode(fragmentShaderEditor.getText());
+                mainForm.renderer.activeShader.updateVertexShaderSourceCode(vertexShaderEditor.getText());
+                mainForm.renderer.reloadShaders();
+                mainForm.glPanel.repaint();
+            }
+        });
 
         fragmentShaderEditor = new RSyntaxTextArea();
         fragmentShaderEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
         fragmentShaderEditor.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 if (liveMode.isSelected()) {
-                    mf.renderer.activeShader.updateFragmentShaderSourceCode(fragmentShaderEditor.getText());
+                    mainForm.renderer.activeShader.updateFragmentShaderSourceCode(fragmentShaderEditor.getText());
+                    mainForm.renderer.reloadShaders();
+                    mainForm.glPanel.repaint();
                 }
             }
         });
@@ -43,7 +57,9 @@ public class CodePanel extends JPanel {
         vertexShaderEditor.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 if (liveMode.isSelected()) {
-                    mf.renderer.activeShader.updateVertexShaderSourceCode(vertexShaderEditor.getText());
+                    mainForm.renderer.activeShader.updateVertexShaderSourceCode(vertexShaderEditor.getText());
+                    mainForm.renderer.reloadShaders();
+                    mainForm.glPanel.repaint();
                 }
             }
         });
@@ -54,10 +70,6 @@ public class CodePanel extends JPanel {
         JTabbedPane tabPane = new JTabbedPane();
         tabPane.addTab("Fragment Shader", fragmentShaderScrollPane);
         tabPane.addTab("Vertex Shader", vertexShaderScrollPane);
-
-
-
-        liveMode = new JCheckBox("Live Mode");
         
         shaderComboBox = new JComboBox<String>();
         shaderComboBox.addActionListener(new java.awt.event.ActionListener() {
@@ -70,13 +82,19 @@ public class CodePanel extends JPanel {
 
         mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addComponent(tabPane)
-            .addComponent(liveMode)
-            .addComponent(shaderComboBox));
+            .addGroup(mainLayout.createSequentialGroup()
+                .addComponent(liveMode)
+                .addGap(10)
+                .addComponent(compileButton)
+                .addGap(10)
+                .addComponent(shaderComboBox)));
 
         mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
             .addComponent(tabPane)
-            .addComponent(liveMode)
-            .addComponent(shaderComboBox));
+            .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(liveMode)
+                .addComponent(compileButton)
+                .addComponent(shaderComboBox)));
     }
 
     private void changeShader(java.awt.event.ActionEvent evt) {
@@ -84,9 +102,9 @@ public class CodePanel extends JPanel {
         
         for (Shader shader : Resources.shaders) {
             if (shader.name.equals(name)) {
-                mf.renderer.activeShader = shader;
-                mf.glPanel.repaint();
-
+                mainForm.renderer.activeShader = shader;
+                mainForm.glPanel.repaint();
+                
                 fragmentShaderEditor.setText(shader.fragmentSourceCode);
                 vertexShaderEditor.setText(shader.vertexSourceCode);
                 return;

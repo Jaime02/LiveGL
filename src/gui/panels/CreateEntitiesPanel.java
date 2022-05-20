@@ -1,140 +1,128 @@
-
 package gui.panels;
 
 import gui.MainForm;
 import scene.Entity;
 import scene.MeshEntity;
 import scene.Resources;
-import utils.Color;
+import utils.CustomColor;
 
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import java.awt.event.ActionListener;
+import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
+import javax.swing.JLabel;
+import java.awt.event.ActionEvent;
+
 
 public class CreateEntitiesPanel extends JPanel {
-    public MainForm mf;
+    public MainForm mainForm;
+    private JTextField colorTextInput;
 
-    private javax.swing.JTextField colorText;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JButton maskAddCubeButton;
-    private javax.swing.JButton maskAddSphereButton;
-    private javax.swing.JButton maskDelButton;
+    public CreateEntitiesPanel(MainForm mainForm) {
+        this.mainForm = mainForm;
 
-    public CreateEntitiesPanel(MainForm mf) {
-        this.mf = mf;
+        JPanel mainPanel = new JPanel();
+        mainPanel.setBorder(BorderFactory.createTitledBorder("Add objects"));
 
-        jPanel3 = new JPanel();
-        maskAddCubeButton = new JButton();
-        maskDelButton = new JButton();
-        maskAddSphereButton = new JButton();
-        colorText = new javax.swing.JTextField();
-
-        jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Add objects"));
-
-        maskAddCubeButton.setText("Cube");
-        maskAddCubeButton.setToolTipText("Create a cube");
-        maskAddCubeButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                maskAddCubeButtonActionPerformed(evt);
+        JButton addCubeButton = new JButton("Cube");
+        addCubeButton.setToolTipText("Create a cube");
+        addCubeButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                addCubeButtonActionPerformed(evt);
             }
         });
 
-        maskDelButton.setText("Delete");
-        maskDelButton.setToolTipText("Deletes the selected object");
-        maskDelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                maskDelButtonActionPerformed(evt);
+        JButton addSphereButton = new JButton("Sphere");
+        addSphereButton.setToolTipText("Create a sphere");
+        addSphereButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                addSphereButtonActionPerformed(evt);
             }
         });
 
-        maskAddSphereButton.setText("Sphere");
-        maskAddSphereButton.setToolTipText("Create a sphere");
-        maskAddSphereButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                maskAddSphereButtonActionPerformed(evt);
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.setToolTipText("Deletes the selected object");
+        deleteButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                deleteButtonActionPerformed(evt);
+            } 
+        });
+
+        JLabel colorTextLabel = new JLabel("Color: (R, G, B, A)");
+
+        colorTextInput = new javax.swing.JTextField("255, 255, 255, 255");
+        colorTextInput.setToolTipText("Color RGBA");
+
+        JButton applyColorButton = new JButton("Apply color to selected entity");
+        applyColorButton.setToolTipText("Applies the RGBA color to the selected entity");
+        applyColorButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                applyColorButtonActionPerformed(evt);
             }
         });
 
-        colorText.setText("255,255,255,255");
-        colorText.setToolTipText("Color RGBA");
-        colorText.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                colorTextActionPerformed(evt);
-            }
-        });
+        GroupLayout mainLayout = new GroupLayout(this);
+        mainLayout.setAutoCreateContainerGaps(true);
+        this.setLayout(mainLayout);
+        mainLayout.setHorizontalGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+            .addGroup(mainLayout.createSequentialGroup()
+                .addComponent(addCubeButton)
+                .addComponent(addSphereButton)
+                .addComponent(deleteButton))
+            .addComponent(colorTextInput)
+            .addComponent(colorTextLabel)
+            .addComponent(applyColorButton));
 
-        javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
-        jPanel3.setLayout(jPanel3Layout);
-        jPanel3Layout.setHorizontalGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel3Layout.createSequentialGroup().addContainerGap()
-                        .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                .addComponent(colorText)
-                                .addGroup(jPanel3Layout.createSequentialGroup().addComponent(maskAddCubeButton)
-                                        .addGap(6, 6, 6).addComponent(maskAddSphereButton)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addComponent(maskDelButton).addGap(0, 0, Short.MAX_VALUE)))
-                        .addContainerGap()));
-        jPanel3Layout.setVerticalGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addGroup(jPanel3Layout.createSequentialGroup().addContainerGap()
-                        .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                                .addComponent(maskAddCubeButton).addComponent(maskAddSphereButton)
-                                .addComponent(maskDelButton))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED,
-                                GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(colorText, GroupLayout.PREFERRED_SIZE,
-                                GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap()));
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
-        this.setLayout(layout);
-        layout.setHorizontalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup().addContainerGap()
-                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                .addComponent(
-                    jPanel3, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))));
-
-        layout.setVerticalGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanel3, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                .addContainerGap()));
+        mainLayout.setVerticalGroup(mainLayout.createSequentialGroup()
+            .addGroup(mainLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(addCubeButton)
+                .addComponent(addSphereButton)
+                .addComponent(deleteButton))
+            .addComponent(colorTextLabel)
+            .addComponent(colorTextInput, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+            .addComponent(applyColorButton));
     }
 
-    private void maskAddCubeButtonActionPerformed(java.awt.event.ActionEvent evt) {
+    private void addCubeButtonActionPerformed(ActionEvent evt) {
         MeshEntity me = new MeshEntity(Resources.MESH_BOX);
         me.setTag(Entity.TAG_OBJ);
-        me.setColor(Color.WHITE);
-        mf.addMeshEntityToSceneCenterAndResizeIt(me);
+        me.setColor(CustomColor.WHITE);
+        mainForm.addMeshEntityToSceneCenterAndResizeIt(me);
 
-        mf.needUpdate();
+        mainForm.needUpdate();
     }
 
-    private void maskDelButtonActionPerformed(java.awt.event.ActionEvent evt) {
+    private void deleteButtonActionPerformed(ActionEvent evt) {
         // Remove from simulation and scene
-        for (Entity e : mf.selectedEntities) {
+        for (Entity e : mainForm.selectedEntities) {
             if (e.getTag() == Entity.TAG_OBJ) {
-                mf.scene.getEntities().remove(e);
+                mainForm.scene.getEntities().remove(e);
             }
         }
-        mf.clearSelection();
-        mf.needUpdate();
+        mainForm.clearSelection();
+        mainForm.needUpdate();
     }
 
-    private void maskAddSphereButtonActionPerformed(java.awt.event.ActionEvent evt) {
+    private void addSphereButtonActionPerformed(ActionEvent evt) {
         MeshEntity me = new MeshEntity(Resources.MESH_SPHERE);
         me.setTag(Entity.TAG_OBJ);
-        me.setColor(Color.WHITE);
-        mf.addMeshEntityToSceneCenterAndResizeIt(me);
-        mf.needUpdate();
+        me.setColor(CustomColor.WHITE);
+        mainForm.addMeshEntityToSceneCenterAndResizeIt(me);
+        mainForm.needUpdate();
     }
 
-    private void colorTextActionPerformed(java.awt.event.ActionEvent evt) {
-        int color = Color.parse(colorText.getText());
-        for (Entity e : mf.selectedEntities) {
+    private void applyColorButtonActionPerformed(ActionEvent evt) {
+        int color = CustomColor.parse(colorTextInput.getText());
+        
+        for (Entity e : mainForm.selectedEntities) {
             if (e instanceof MeshEntity) {
                 MeshEntity me = (MeshEntity)e;
                 me.setColor(color);
             }
         }
-        mf.needUpdate();
+
+        mainForm.needUpdate();
     }
 }

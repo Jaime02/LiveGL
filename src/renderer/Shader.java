@@ -7,12 +7,10 @@ import scene.Resources;
 import scene.Scene;
 import shapes.Mesh;
 import utils.BufferUtils;
-import utils.Color;
-import utils.FileUtils;
+import utils.CustomColor;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -20,18 +18,19 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import javax.swing.JOptionPane;
+import java.awt.Color;
 import com.jogamp.opengl.GL;
 import com.jogamp.opengl.GL2;
-import com.jogamp.opengl.GL2ES2;
+import gui.MainForm;
 
 public class Shader {
+    MainForm mainForm;
     private final String vertexShaderFileName, fragmentShaderFileName;
     public final String name;
-    private GL2 gl;
 
     public String fragmentSourceCode, vertexSourceCode;
-    
+
     int shaderProgramID;
     int fragmentShader, vertexShader;
 
@@ -57,8 +56,8 @@ public class Shader {
     public static int ORDER_TRANSLUCENT = 4;
     public static int ORDER_GUI = 100;
 
-    public Shader(GL2 gl, Resources resources, String vProgram, String fProgram, int renderingOrder) {
-        this.gl = gl;
+    public Shader(MainForm mainForm, String vProgram, String fProgram, int renderingOrder) {
+        this.mainForm = mainForm;
         this.vertexShaderFileName = vProgram;
         this.fragmentShaderFileName = fProgram;
 
@@ -66,28 +65,22 @@ public class Shader {
         this.renderingOrder = renderingOrder;
     }
 
-    public Shader init() {
-        shaderProgramID = createProgramFromBuffer(vertexShaderFileName, fragmentShaderFileName);
-        getUniforms(gl);
+    public void reload(GL2 gl) {
+        unloadShader(gl);
+        init(gl);
+    }
 
+    public Shader init(GL2 gl) {
+        shaderProgramID = createProgramFromBuffer(gl, vertexShaderFileName, fragmentShaderFileName);
+        if (shaderProgramID == 0) {
+            return null;
+        }
+        getUniforms(gl);
         return this;
     }
 
-    public int getRenderingOrder(MeshEntity me) {
-        if (Color.alpha(me.getColor()) < 255) {
-            return ORDER_TRANSLUCENT;
-        }
-        return renderingOrder;
-    }
-
-    public void reload() {
-        unloadShader();
-        init();
-    }
-
-    void bindUniforms(Scene scene, Renderer renderer, Scene s, MeshEntity me,
-            Matrix4f projectionViewModel, Matrix4f viewModel, Matrix4f model,
-            FloatBuffer fb) {
+    void bindUniforms(GL2 gl, Scene scene, Renderer renderer, Scene s, MeshEntity me, Matrix4f projectionViewModel,
+            Matrix4f viewModel, Matrix4f model, FloatBuffer fb) {
 
         fb.rewind();
         gl.glUniformMatrix4fv(mvpMatrixHandle, 1, false, projectionViewModel.fillFloatBuffer(fb, true));
@@ -100,10 +93,10 @@ public class Shader {
         gl.glUniform4f(lightPosHandle, lightPos.x, lightPos.y, lightPos.z, 1);
         gl.glUniform4f(eyePosHandle, eyePos.x, eyePos.y, eyePos.z, 1);
 
-        float r = Color.red(me.getColor()) / 255.0f;
-        float g = Color.green(me.getColor()) / 255.0f;
-        float b = Color.blue(me.getColor()) / 255.0f;
-        float a = Color.alpha(me.getColor()) / 255.0f;
+        float r = CustomColor.red(me.getColor()) / 255.0f;
+        float g = CustomColor.green(me.getColor()) / 255.0f;
+        float b = CustomColor.blue(me.getColor()) / 255.0f;
+        float a = CustomColor.alpha(me.getColor()) / 255.0f;
         gl.glUniform4f(colorHandle, r, g, b, a);
 
         gl.glUniform1f(ambient, me.getMaterial().getAmbient());
@@ -112,7 +105,7 @@ public class Shader {
         gl.glUniform1f(shininess, me.getMaterial().getShininess());
     }
 
-    void bindAttribs(Scene s, MeshEntity me) {
+    void bindAttribs(GL2 gl, Scene s, MeshEntity me) {
         Mesh mesh;
 
         if (me.getMesh().equals(Resources.MESH_CUSTOM)) {
@@ -134,7 +127,7 @@ public class Shader {
         gl.glEnableVertexAttribArray(textureCoordHandle);
     }
 
-    void render(Scene s, MeshEntity me) {
+    void render(GL2 gl, Scene s, MeshEntity me) {
         Mesh mesh;
         if (me.getMesh().equals(Resources.MESH_CUSTOM)) {
             mesh = me.customMesh;
@@ -146,14 +139,14 @@ public class Shader {
         }
     }
 
-    void unbindAttribs(Scene s, MeshEntity me) {
+    void unbindAttribs(GL2 gl, Scene s, MeshEntity me) {
         gl.glDisableVertexAttribArray(vertexHandle);
         gl.glDisableVertexAttribArray(normalHandle);
         gl.glDisableVertexAttribArray(textureCoordHandle);
     }
 
-    void changeGLStatus(Renderer r, Scene s, MeshEntity e) {
-        r.enableBlend(gl, Color.alpha(e.getColor()) < 255);
+    void changeGLStatus(GL2 gl, Renderer r, Scene s, MeshEntity e) {
+        r.enableBlend(gl, CustomColor.alpha(e.getColor()) < 255);
 
         r.enableCullFace(gl, !e.isDoubledSided());
 
@@ -183,7 +176,7 @@ public class Shader {
         texDiffuse = gl.glGetUniformLocation(shaderProgramID, "texSampler2D");
     }
 
-    public void unloadShader() {
+    public void unloadShader(GL2 gl) {
         // deatach shader just in case that the current one is attached
         gl.glUseProgram(0);
 
@@ -196,13 +189,14 @@ public class Shader {
     }
 
     // Create a shader program
-    int createProgramFromBuffer(String vProgram, String fProgram) {
+    int createProgramFromBuffer(GL2 gl, String vProgram, String fProgram) {
         int program = 0;
-        vertexShader = initShader(GL2.GL_VERTEX_SHADER, getSourceCode(vProgram));
-        fragmentShader = initShader(GL2.GL_FRAGMENT_SHADER, getSourceCode(fProgram));
+        vertexShader = initShader(gl, GL2.GL_VERTEX_SHADER, getSourceCode(vProgram));
+        fragmentShader = initShader(gl, GL2.GL_FRAGMENT_SHADER, getSourceCode(fProgram));
 
         if (vertexShader == 0 || fragmentShader == 0) {
-            throw new RuntimeException("Error creating shader");
+            // Error compiling shaders
+            return 0;
         }
         program = gl.glCreateProgram();
 
@@ -226,45 +220,62 @@ public class Shader {
                 gl.glGetProgramInfoLog(program, length, infoLen, buf);
                 byte[] b = new byte[length];
                 buf.get(b);
-                System.err.println("Could not link program: " + new String(b));
+
+                if (!mainForm.codePanel.liveMode.isSelected()) {
+                    System.err.println("Could not link program: " + new String(b));
+                }
             }
         }
 
         return program;
     }
 
-    int initShader(int nShaderType, String source) {        
+    int initShader(GL2 gl, int nShaderType, String source) {
         int shader = gl.glCreateShader(nShaderType);
-
-        int error = gl.glGetError();
-        if (error != 0) {
-            System.out.println("Error: " + gl.glGetError());
-        }
-
         if (shader == 0) {
             throw new RuntimeException("Error initializating shader.");
         }
 
-        String[] sources = new String[] { source };
+        String[] sources = new String[] {source};
         gl.glShaderSource(shader, 1, sources, null);
         gl.glCompileShader(shader);
         IntBuffer compiled = BufferUtils.createIntBuffer(1);
         gl.glGetShaderiv(shader, GL2.GL_COMPILE_STATUS, compiled);
 
         if (compiled.get() == 0) {
+            // Compilation failed
+            if (mainForm.codePanel.liveMode.isSelected()) {
+                if (nShaderType == GL2.GL_VERTEX_SHADER) {
+                    mainForm.codePanel.vertexShaderEditor.setBackground(new Color(255, 77, 77));
+                } else {
+                    mainForm.codePanel.fragmentShaderEditor.setBackground(new Color(255, 77, 77));
+                }
+                return 0;
+            }
+
             IntBuffer infoLen = BufferUtils.createIntBuffer(1);
             gl.glGetShaderiv(shader, GL2.GL_INFO_LOG_LENGTH, infoLen);
             int length = infoLen.get();
             if (length > 0) {
+
                 ByteBuffer buf = BufferUtils.createByteBuffer(length);
                 infoLen.flip();
                 gl.glGetShaderInfoLog(shader, length, infoLen, buf);
+
                 byte[] b = new byte[infoLen.get()];
                 buf.get(b);
-                System.out.println("Program : " + fragmentShaderFileName);
-                System.out.println(source);
-                System.err.println("Error compiling shader " + vertexShaderFileName + " " + fragmentShaderFileName + " -> " + new String(b));
+                JOptionPane.showMessageDialog(
+                    mainForm, "Error compiling shader " + vertexShaderFileName + " " + fragmentShaderFileName + " -> " + new String(b), "Error compiling shaders",
+                    JOptionPane.ERROR_MESSAGE
+                );
             }
+            return 0;
+        }
+
+        if (nShaderType == GL2.GL_VERTEX_SHADER) {
+            mainForm.codePanel.vertexShaderEditor.setBackground(Color.WHITE);
+        } else {
+            mainForm.codePanel.fragmentShaderEditor.setBackground(Color.WHITE);
         }
 
         return shader;
@@ -280,6 +291,7 @@ public class Shader {
     }
 
     public void updateFragmentShaderSourceCode(String sourceCode) {
+
         // Open the file with the shader source code
         File file = new File("src/shaders/" + fragmentShaderFileName);
         // Overwrite the file with the new source code
@@ -292,13 +304,12 @@ public class Shader {
         }
 
         fragmentSourceCode = sourceCode;
-        reload();
     }
 
     public void updateVertexShaderSourceCode(String sourceCode) {
         // Open the file with the shader source code
         File file = new File("src/shaders/" + vertexShaderFileName);
-        
+
         // Overwrite the file with the new source code
         try {
             FileWriter fw = new FileWriter(file, false);
@@ -308,7 +319,12 @@ public class Shader {
             Logger.getLogger(Shader.class.getName()).log(Level.SEVERE, null, ex);
         }
         vertexSourceCode = sourceCode;
+    }
 
-        reload();
+    public int getRenderingOrder(MeshEntity me) {
+        if (CustomColor.alpha(me.getColor()) < 255) {
+            return ORDER_TRANSLUCENT;
+        }
+        return renderingOrder;
     }
 }

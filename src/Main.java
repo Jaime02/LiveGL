@@ -1,3 +1,4 @@
+import javax.swing.JFrame;
 import gui.MainForm;
 
 public class Main {
@@ -5,6 +6,7 @@ public class Main {
         setStyle();
 
         final MainForm t = new MainForm();
+        t.setExtendedState(t.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         t.setVisible(true);
     }
 

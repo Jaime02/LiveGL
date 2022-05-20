@@ -15,10 +15,10 @@ import javax.swing.GroupLayout;
 public class TransformForm extends javax.swing.JFrame { 
     private JTextField targetField;
     private Transform targetTransform;
-    final MainForm mf;
+    final MainForm mainForm;
     
-    public static void editTransform(Transform t, Component c, MainForm mf){
-        TransformForm tf = new TransformForm(t, mf);
+    public static void editTransform(Transform t, Component c, MainForm mainForm){
+        TransformForm tf = new TransformForm(t, mainForm);
         tf.setLocationRelativeTo(c);
         tf.setVisible(true);
     }
@@ -63,15 +63,15 @@ public class TransformForm extends javax.swing.JFrame {
         target.getScale().parse( s[6], s[7], s[8] );
     }
     
-    public TransformForm(JTextField targetField, MainForm mf) {
-        this.mf = mf;
+    public TransformForm(JTextField targetField, MainForm mainForm) {
+        this.mainForm = mainForm;
         this.targetField = targetField;
         initComponents();
         objectToGui();
     }
     
-    public TransformForm(Transform targetTransform, MainForm mf) {
-        this.mf = mf;
+    public TransformForm(Transform targetTransform, MainForm mainForm) {
+        this.mainForm = mainForm;
         this.targetTransform = targetTransform;
         initComponents();
         objectToGui();
@@ -361,7 +361,7 @@ public class TransformForm extends javax.swing.JFrame {
 
     private void setButtonActionPerformed(java.awt.event.ActionEvent evt) {
         guiToObject();
-        mf.needUpdate();
+        mainForm.needUpdate();
     }
 
     private void closeButtonActionPerformed(java.awt.event.ActionEvent evt) {

@@ -12,12 +12,15 @@ import scene.Entity;
 import scene.MeshEntity;
 import scene.Resources;
 import scene.Scene;
-import utils.Color;
+import utils.CustomColor;
 import utils.Parse;
 import utils.StringFormats;
 
 import java.awt.Component;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import com.jogamp.opengl.GLAutoDrawable;
@@ -36,27 +39,25 @@ import javax.swing.GroupLayout;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.LayoutStyle.ComponentPlacement;
 
 public final class MainForm extends javax.swing.JFrame {
     public final ArrayList<Entity> selectedEntities = new ArrayList<>();
 
-    boolean cameraFixed;
-    boolean hasDragged;
+    boolean cameraFixed, glInitialized;
 
     public final Renderer renderer;
     public final Scene scene;
 
     public GLJPanel glPanel;
 
-    public final CreateEntitiesPanel miscPanel;
+    public final CreateEntitiesPanel createEntitiesPanel;
     public final MovePanel movePanel;
     public final CodePanel codePanel;
 
     private int lastButton, lastX, lastY;
 
-    private JMenuItem camViewMenu;
-    private JMenuItem cameraMovementMenu;
     private JPanel containerPanel;
 
     private JLabel labelXCoord, labelYCoord, labelZCoord;
@@ -68,13 +69,9 @@ public final class MainForm extends javax.swing.JFrame {
     private JLabel labelXSize, labelYSize, labelZSize;
     private JTextField inputXSize, inputYSize, inputZSize;
 
-    private JMenu menuCamera;
-    private JMenuBar menuBar;
     private JPanel rightPanel;
     private JPanel wPanel;
     private JTabbedPane mainTabPanel;
-    private JMenuItem resetCamMenu;
-    private JMenuItem unlockCameraMenu;
 
     public enum FieldsToChange {
         xField, yField, zField, rxField, ryField, rzField, sxField, syField, szField
@@ -85,36 +82,42 @@ public final class MainForm extends javax.swing.JFrame {
         setTitle("LiveGL");
 
         cameraFixed = true;
+        glInitialized = false;
 
         scene = new Scene();
         renderer = new Renderer(scene, this);
         initOpenGL();
 
-        miscPanel = new CreateEntitiesPanel(this);
+        createEntitiesPanel = new CreateEntitiesPanel(this);
         movePanel = new MovePanel(this);
         codePanel = new CodePanel(this);
 
         initComponents();
         initSimulation();
-        mainTabPanel.addTab("Misc", miscPanel);
-        mainTabPanel.addTab("Move", movePanel);
+        mainTabPanel.addTab("Create entities", createEntitiesPanel);
+        mainTabPanel.addTab("Move entities", movePanel);
     }
 
     private void initOpenGL() {
         GLProfile glprofile = GLProfile.getDefault();
         GLCapabilities glcapabilities = new GLCapabilities(glprofile);
+        System.out.println("Initialized opengl");
+
         glPanel = new GLJPanel(glcapabilities);
+        if (glInitialized) {
+            System.out.println("COUNT TTTTTTTTTTTTTTTTTTT A" + glPanel.getGLEventListenerCount());
+            return;
+        }
 
-        GroupLayout panelLayout = new GroupLayout(glPanel);
-
+        glInitialized = true;
         glPanel.addGLEventListener(new GLEventListener() {
             @Override
             public void init(GLAutoDrawable glad) {
+                System.out.println("OpenGL evemt init\n\n\n");
                 renderer.init(glad.getGL().getGL2(), glad.getSurfaceWidth(), glad.getSurfaceHeight());
-                renderer.resources.updateAvailableShaders();
+                renderer.resources.updateAvailableShaders(glad.getGL().getGL2());
                 renderer.activeShader = Resources.shaders.get(0);
                 codePanel.updateShaders();
-                
             }
 
             @Override
@@ -133,7 +136,10 @@ public final class MainForm extends javax.swing.JFrame {
                         glautodrawable.getSurfaceHeight());
             }
         });
+    }
 
+    private void initComponents() {
+        GroupLayout panelLayout = new GroupLayout(glPanel);
         glPanel.setLayout(panelLayout);
 
         panelLayout.setHorizontalGroup(
@@ -143,9 +149,7 @@ public final class MainForm extends javax.swing.JFrame {
         panelLayout.setVerticalGroup(
             panelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
             .addGap(0, 0, Short.MAX_VALUE));
-    }
 
-    private void initComponents() {
         mainTabPanel = new JTabbedPane();
 
         rightPanel = new JPanel();
@@ -176,13 +180,56 @@ public final class MainForm extends javax.swing.JFrame {
         inputZSize = new JTextField("0");
 
         containerPanel = new JPanel();
-        menuBar = new JMenuBar();
 
-        menuCamera = new JMenu();
-        camViewMenu = new JMenuItem();
-        resetCamMenu = new JMenuItem();
-        unlockCameraMenu = new JMenuItem();
-        cameraMovementMenu = new JMenuItem();
+        JMenuBar menuBar = new JMenuBar();
+        setJMenuBar(menuBar);
+
+        JMenu menuFile = new JMenu("File");
+        menuBar.add(menuFile);
+
+        JMenu menuCamera = new JMenu("Camera");
+        menuBar.add(menuCamera);
+
+        JMenuItem newShadersMenu = new JMenuItem("New shaders");
+        newShadersMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                createShaders();
+            }
+        });
+        menuFile.add(newShadersMenu);
+
+        JMenuItem camViewMenu = new JMenuItem("Edit view");
+        camViewMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                camViewMenuActionPerformed(evt);
+            }
+        });
+        menuCamera.add(camViewMenu);
+
+        JMenuItem resetCamMenu = new JMenuItem("Reset");
+        resetCamMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                resetCamMenuActionPerformed(evt);
+            }
+        });
+        menuCamera.add(resetCamMenu);
+
+        JMenuItem unlockCameraMenu = new JMenuItem("Lock / unlock cam");
+        unlockCameraMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                unlockCameraMenuActionPerformed(evt);
+            }
+        });
+        menuCamera.add(unlockCameraMenu);
+
+        JMenuItem cameraMovementMenu = new JMenuItem("Automatic movement");
+        cameraMovementMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cameraMovMenuActionPerformed(evt);
+            }
+        });
+        menuCamera.add(cameraMovementMenu);
+        
 
         inputXRotation.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -378,53 +425,68 @@ public final class MainForm extends javax.swing.JFrame {
         });
 
         containerPanel.add(glPanel, java.awt.BorderLayout.CENTER);
-
-        menuCamera.setText("Camera");
-
-        camViewMenu.setText("Edit View");
-        camViewMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                camViewMenuActionPerformed(evt);
-            }
-        });
-        menuCamera.add(camViewMenu);
-
-        resetCamMenu.setText("Reset");
-        resetCamMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                resetCamMenuActionPerformed(evt);
-            }
-        });
-        menuCamera.add(resetCamMenu);
-
-        unlockCameraMenu.setText("Lock / unlock cam");
-        unlockCameraMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                unlockCameraMenuActionPerformed(evt);
-            }
-        });
-        menuCamera.add(unlockCameraMenu);
-
-        cameraMovementMenu.setText("Automatic movement");
-        cameraMovementMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cameraMovMenuActionPerformed(evt);
-            }
-        });
-        menuCamera.add(cameraMovementMenu);
-
-        menuBar.add(menuCamera);
-
-        setJMenuBar(menuBar);
-
+        
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, containerPanel, rightPanel);
         splitPane.setOneTouchExpandable(true);
-        splitPane.setDividerLocation(800);
-
+        splitPane.setDividerLocation(900);
         // Set the split pane as the central widget
         getContentPane().add(splitPane);
 
         pack();
+    }
+
+    protected void createShaders() {
+        // Get the name of the shader file using a message box
+        String shaderFileName = JOptionPane.showInputDialog(this, "Enter the name of the shader file", "Shader File Name", JOptionPane.QUESTION_MESSAGE);
+        if (shaderFileName == null) {
+            return;
+        }
+
+        // Create the vertex shader file
+        try {
+            File vertexShaderFile = new File("src/shaders/" + shaderFileName + ".vsh");
+            if (vertexShaderFile.exists()) {
+                int result = JOptionPane.showConfirmDialog(this, "The file " + shaderFileName + ".vsh already exists. Do you want to overwrite it?", "Overwrite File?", JOptionPane.YES_NO_OPTION);
+                if (result == JOptionPane.NO_OPTION) {
+                    return;
+                }
+            }
+            vertexShaderFile.createNewFile();
+
+            // Write a basic vertex shader source code in the file
+            FileWriter fw = new FileWriter(vertexShaderFile);
+            fw.write("attribute vec4 vertexPosition;\n\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main()\n{\n    gl_Position = modelViewProjectionMatrix * vertexPosition;\n}");
+            fw.close();
+
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error creating shader file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Create the fragment shader file
+        try {
+            File fragmentShaderFile = new File("src/shaders/" + shaderFileName + ".fsh");
+            if (fragmentShaderFile.exists()) {
+                int result = JOptionPane.showConfirmDialog(this, "The file " + shaderFileName + ".fsh already exists. Do you want to overwrite it?", "Overwrite File?", JOptionPane.YES_NO_OPTION);
+                if (result == JOptionPane.NO_OPTION) {
+                    return;
+                }
+            }
+            fragmentShaderFile.createNewFile();
+
+            // Write a basic fragment shader code in the file
+            FileWriter fw = new FileWriter(fragmentShaderFile);
+            fw.write("uniform vec4 colorMod;\n\nvoid main()\n{\n    gl_FragColor = colorMod;\n}");
+            fw.close();
+
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error creating shader file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Trigger init method of glPanel
+        initOpenGL();
+        codePanel.shaderComboBox.addItem(shaderFileName);
     }
 
     public void initSimulation() {
@@ -441,14 +503,14 @@ public final class MainForm extends javax.swing.JFrame {
         MeshEntity me = new MeshEntity(Resources.MESH_BOX);
         me.getTransform().getScale().set(0.1f);
         me.setTag(Entity.TAG_OBJ);
-        me.setColor(Color.RED);
+        me.setColor(CustomColor.RED);
         scene.getEntities().add(me);
 
         MeshEntity me2 = new MeshEntity(Resources.MESH_SPHERE);
         me2.getTransform().getScale().set(0.12f);
         me2.getTransform().getTranslation().set(0.2f, 0, 0);
         me2.setTag(Entity.TAG_OBJ);
-        me2.setColor(Color.BLUE);
+        me2.setColor(CustomColor.BLUE);
         scene.getEntities().add(me2);
 
         adjustGUIGainAndCameras();
@@ -470,9 +532,11 @@ public final class MainForm extends javax.swing.JFrame {
         lastY = evt.getY();
 
         if (lastButton == 3) {
+            // Right button clicked
             if (cameraFixed) {
                 scene.getCamera().activateObservation(true, scene.getCamera().getObservationPoint());
             }
+
         } else if (lastButton == 1) {
             // Left button clicked
             updateSelection(evt);
@@ -633,7 +697,7 @@ public final class MainForm extends javax.swing.JFrame {
     private int addTagsForSelectionFilter(int tags) {
         final Component comp = mainTabPanel.getSelectedComponent();
 
-        if (comp == miscPanel) {
+        if (comp == createEntitiesPanel) {
             tags |= Entity.TAG_OBJ;
         } else if (comp == movePanel) {
             tags |= Entity.TAG_CONTROL_POINT;

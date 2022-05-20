@@ -13,6 +13,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.LinkedList;
 import com.jogamp.opengl.GL2;
+import gui.MainForm;
+import renderer.Renderer;
 
 
 public class Resources {
@@ -33,16 +35,15 @@ public class Resources {
     public static LinkedList<Shader> shaders;
     private static HashMap<String, Mesh> meshes;
 
-    private GL2 gl;
+    public MainForm mainForm;
+    public Renderer renderer;
 
-    public Resources(GL2 gl) {
-        this.gl = gl;
+    public Resources(MainForm mainForm, GL2 gl, Renderer renderer) {
+        this.mainForm = mainForm;
+        this.renderer = renderer;
 
         shaders = new LinkedList<>();
         meshes = new HashMap<>();
-
-        // Load shaders
-        updateAvailableShaders();
 
         // Load meshes
         meshes.put(MESH_BOX, new Box(0.5f, 0.5f, 0.5f));
@@ -63,7 +64,7 @@ public class Resources {
         return meshes.get(m);
     }
 
-    public void updateAvailableShaders() {
+    public void updateAvailableShaders(GL2 gl) {
         shaders.clear();
 
         // Each shader must have a fragment and vertex shader file
@@ -75,16 +76,22 @@ public class Resources {
                     
                     String vertexShader = file.substring(0, file.length() - 4) + ".vsh";
 
-                    Shader shader = new Shader(gl, this, vertexShader, fragmentShader, Shader.ORDER_OPAQUE);
+                    Shader shader = new Shader(this.mainForm, vertexShader, fragmentShader, Shader.ORDER_OPAQUE);
                     shader.fragmentSourceCode = readFile("src/shaders/" + fragmentShader);
                     shader.vertexSourceCode = readFile("src/shaders/" + vertexShader);
                     
-                    shader.init();
+                    if (shader.init(gl) == null) {
+                        continue;
+                    }
 
                     shaders.add(shader);
                 }
             }
         };
+    }
+    
+    public void reloadShaders(GL2 gl){
+        renderer.activeShader.reload(gl);
     }
 
     private String readFile(String path) {
@@ -98,7 +105,7 @@ public class Resources {
     public void releaseResources(GL2 gl) {
         // Delete shaders
         for (Shader shader : shaders) {
-            shader.unloadShader();
+            shader.unloadShader(gl);
         }
 
         // Delete textures (No textures used)

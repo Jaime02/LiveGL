@@ -4,8 +4,8 @@ import java.util.ArrayList;
 
 
 public class Parse {
-    
-    
+
+
     public static float toFloat(String text) {
         try {
             return Float.parseFloat(text);
@@ -29,42 +29,42 @@ public class Parse {
             return 0;
         }
     }
-    
-    public static ArrayList<Float> parseFloats(String text){
+
+    public static ArrayList<Float> parseFloats(String text) {
         String[] ss = text.split("\\n");
         ArrayList<Float> v = new ArrayList<>();
-        for(String s : ss){
-            v.add(toFloat(s) );
+        for (String s : ss) {
+            v.add(toFloat(s));
         }
         return v;
     }
-    
-    public static String printFloats(ArrayList<Float> floats){
+
+    public static String printFloats(ArrayList<Float> floats) {
         StringBuilder sb = new StringBuilder();
-        for(Float f : floats){
+        for (Float f : floats) {
             sb.append(f.toString() + "\n");
         }
         return sb.toString();
     }
-    
-    public static String printIntArray(int[] array){
+
+    public static String printIntArray(int[] array) {
         StringBuilder sb = new StringBuilder();
         final int size = array.length;
-        for(int i = 0; i < size; ++i){
+        for (int i = 0; i < size; ++i) {
             sb.append(array[i] + "\n");
         }
         return sb.toString();
     }
-    
-     public static int[] parseIntArray(final String text){
-         return parseIntArray(text,  "\\n");
-     }
-     
-    public static int[] parseIntArray(final String text,final String separator){
+
+    public static int[] parseIntArray(final String text) {
+        return parseIntArray(text, "\\n");
+    }
+
+    public static int[] parseIntArray(final String text, final String separator) {
         String[] ss = text.split(separator);
         final int size = ss.length;
         int[] v = new int[size];
-        for(int i = 0; i < size; ++i){
+        for (int i = 0; i < size; ++i) {
             v[i] = Parse.toInt(ss[i]);
         }
         return v;
