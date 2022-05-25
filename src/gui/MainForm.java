@@ -15,14 +15,13 @@ import scene.Scene;
 import utils.CustomColor;
 import utils.Parse;
 import utils.StringFormats;
+import utils.TCPClient;
+import utils.TCPServer;
 
-import java.awt.Component;
-import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
@@ -34,15 +33,20 @@ import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
-import javax.swing.LayoutStyle;
 import javax.swing.GroupLayout;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.LayoutStyle.ComponentPlacement;
+import java.awt.event.FocusAdapter;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.ActionEvent;
+import java.awt.Component;
+import java.awt.event.MouseEvent;
 
-public final class MainForm extends javax.swing.JFrame {
+
+public final class MainForm extends JFrame {
     public final ArrayList<Entity> selectedEntities = new ArrayList<>();
 
     boolean cameraFixed, glInitialized;
@@ -60,18 +64,17 @@ public final class MainForm extends javax.swing.JFrame {
 
     private JPanel containerPanel;
 
-    private JLabel labelXCoord, labelYCoord, labelZCoord;
     private JTextField inputXCoord, inputYCoord, inputZCoord;
-
-    private JLabel labelXRotation, labelYRotation, labelZRotation;
     private JTextField inputXRotation, inputYRotation, inputZRotation;
-
-    private JLabel labelXSize, labelYSize, labelZSize;
     private JTextField inputXSize, inputYSize, inputZSize;
 
     private JPanel rightPanel;
-    private JPanel wPanel;
+    private JPanel widgetsPanel;
     private JTabbedPane mainTabPanel;
+
+    public NetworkConfigWindow networkConfigWindow;
+    public TCPServer server;
+    public TCPClient client;
 
     public enum FieldsToChange {
         xField, yField, zField, rxField, ryField, rzField, sxField, syField, szField
@@ -96,16 +99,16 @@ public final class MainForm extends javax.swing.JFrame {
         initSimulation();
         mainTabPanel.addTab("Create entities", createEntitiesPanel);
         mainTabPanel.addTab("Move entities", movePanel);
+
+        networkConfigWindow = new NetworkConfigWindow(this);
     }
 
     private void initOpenGL() {
         GLProfile glprofile = GLProfile.getDefault();
         GLCapabilities glcapabilities = new GLCapabilities(glprofile);
-        System.out.println("Initialized opengl");
 
         glPanel = new GLJPanel(glcapabilities);
         if (glInitialized) {
-            System.out.println("COUNT TTTTTTTTTTTTTTTTTTT A" + glPanel.getGLEventListenerCount());
             return;
         }
 
@@ -113,11 +116,10 @@ public final class MainForm extends javax.swing.JFrame {
         glPanel.addGLEventListener(new GLEventListener() {
             @Override
             public void init(GLAutoDrawable glad) {
-                System.out.println("OpenGL evemt init\n\n\n");
                 renderer.init(glad.getGL().getGL2(), glad.getSurfaceWidth(), glad.getSurfaceHeight());
                 renderer.resources.updateAvailableShaders(glad.getGL().getGL2());
                 renderer.activeShader = Resources.shaders.get(0);
-                codePanel.updateShaders();
+                codePanel.updateAvailableShaders();
             }
 
             @Override
@@ -139,41 +141,28 @@ public final class MainForm extends javax.swing.JFrame {
     }
 
     private void initComponents() {
-        GroupLayout panelLayout = new GroupLayout(glPanel);
-        glPanel.setLayout(panelLayout);
-
-        panelLayout.setHorizontalGroup(
-            panelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGap(0, 502, Short.MAX_VALUE));
-
-        panelLayout.setVerticalGroup(
-            panelLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE));
-
         mainTabPanel = new JTabbedPane();
+        widgetsPanel = new JPanel();
 
-        rightPanel = new JPanel();
-        wPanel = new JPanel();
-
-        labelXCoord = new JLabel("X");
-        labelYCoord = new JLabel("Y");
-        labelZCoord = new JLabel("Z");
+        JLabel labelXCoord = new JLabel("X");
+        JLabel labelYCoord = new JLabel("Y");
+        JLabel labelZCoord = new JLabel("Z");
 
         inputXCoord = new JTextField("0");
         inputYCoord = new JTextField("0");
         inputZCoord = new JTextField("0");
 
-        labelXRotation = new JLabel("RX");
-        labelYRotation = new JLabel("RY");
-        labelZRotation = new JLabel("RZ");
+        JLabel labelXRotation = new JLabel("RX");
+        JLabel labelYRotation = new JLabel("RY");
+        JLabel labelZRotation = new JLabel("RZ");
 
         inputXRotation = new JTextField("0");
         inputYRotation = new JTextField("0");
         inputZRotation = new JTextField("0");
 
-        labelXSize = new JLabel("SX:");
-        labelYSize = new JLabel("SY:");
-        labelZSize = new JLabel("SZ:");
+        JLabel labelXSize = new JLabel("SX:");
+        JLabel labelYSize = new JLabel("SY:");
+        JLabel labelZSize = new JLabel("SZ:");
 
         inputXSize = new JTextField("0");
         inputYSize = new JTextField("0");
@@ -191,223 +180,189 @@ public final class MainForm extends javax.swing.JFrame {
         menuBar.add(menuCamera);
 
         JMenuItem newShadersMenu = new JMenuItem("New shaders");
-        newShadersMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent e) {
+        newShadersMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
                 createShaders();
             }
         });
         menuFile.add(newShadersMenu);
 
         JMenuItem camViewMenu = new JMenuItem("Edit view");
-        camViewMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        camViewMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 camViewMenuActionPerformed(evt);
             }
         });
         menuCamera.add(camViewMenu);
 
         JMenuItem resetCamMenu = new JMenuItem("Reset");
-        resetCamMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        resetCamMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 resetCamMenuActionPerformed(evt);
             }
         });
         menuCamera.add(resetCamMenu);
 
         JMenuItem unlockCameraMenu = new JMenuItem("Lock / unlock cam");
-        unlockCameraMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        unlockCameraMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 unlockCameraMenuActionPerformed(evt);
             }
         });
         menuCamera.add(unlockCameraMenu);
 
         JMenuItem cameraMovementMenu = new JMenuItem("Automatic movement");
-        cameraMovementMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        cameraMovementMenu.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 cameraMovMenuActionPerformed(evt);
             }
         });
         menuCamera.add(cameraMovementMenu);
         
 
-        inputXRotation.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputXRotation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 rxTextActionPerformed(evt);
             }
         });
 
-        inputYRotation.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputYRotation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 ryTextActionPerformed(evt);
             }
         });
 
-        inputZRotation.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputZRotation.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 rzTextActionPerformed(evt);
             }
         });
 
-        inputXSize.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
+        inputXSize.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent evt) {
                 sxTextFocusGained(evt);
             }
         });
-        inputXSize.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputXSize.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 sxTextActionPerformed(evt);
             }
         });
 
-        inputYSize.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
+        inputYSize.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent evt) {
                 syTextFocusGained(evt);
             }
         });
-        inputYSize.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputYSize.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 syTextActionPerformed(evt);
             }
         });
 
-        inputZSize.addFocusListener(new java.awt.event.FocusAdapter() {
-            public void focusGained(java.awt.event.FocusEvent evt) {
+        inputZSize.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent evt) {
                 szTextFocusGained(evt);
             }
         });
-        inputZSize.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputZSize.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 szTextActionPerformed(evt);
             }
         });
 
-        inputXCoord.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputXCoord.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 xTextActionPerformed(evt);
             }
         });
 
-        inputYCoord.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputYCoord.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 yTextActionPerformed(evt);
             }
         });
 
-        inputZCoord.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        inputZCoord.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 zTextActionPerformed(evt);
             }
         });
 
-        GroupLayout wLayout = new GroupLayout(wPanel);
-        wPanel.setLayout(wLayout);
+        GroupLayout widgetsLayout = new GroupLayout(widgetsPanel);
+        // Add margins to widgetsLayout
+        widgetsLayout.setAutoCreateContainerGaps(true);
+        widgetsLayout.setAutoCreateGaps(true);
 
-        wLayout.setHorizontalGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(wLayout.createSequentialGroup().addContainerGap()
-                .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addComponent(labelZSize)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputZSize, GroupLayout.DEFAULT_SIZE, 81, Short.MAX_VALUE))
+        widgetsPanel.setLayout(widgetsLayout);
 
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addComponent(labelXSize)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputXSize))
+        widgetsLayout.setHorizontalGroup(widgetsLayout.createSequentialGroup()
+            .addGroup(widgetsLayout.createParallelGroup()
+                .addComponent(labelXCoord)
+                .addComponent(labelYCoord)
+                .addComponent(labelZCoord))
+            .addGroup(widgetsLayout.createParallelGroup()
+                .addComponent(inputXCoord)
+                .addComponent(inputYCoord)
+                .addComponent(inputZCoord))
+            .addGroup(widgetsLayout.createParallelGroup()
+                .addComponent(labelXRotation)
+                .addComponent(labelYRotation)
+                .addComponent(labelZRotation))
+            .addGroup(widgetsLayout.createParallelGroup()
+                .addComponent(inputXRotation)
+                .addComponent(inputYRotation)
+                .addComponent(inputZRotation))
+            .addGroup(widgetsLayout.createParallelGroup()
+                .addComponent(labelXSize)
+                .addComponent(labelYSize)
+                .addComponent(labelZSize))
+            .addGroup(widgetsLayout.createParallelGroup()
+                .addComponent(inputXSize)
+                .addComponent(inputYSize)
+                .addComponent(inputZSize))
+        );
 
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addComponent(labelZCoord)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputZCoord))
+        widgetsLayout.setVerticalGroup(widgetsLayout.createSequentialGroup()
+            .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(labelXCoord)
+                .addComponent(inputXCoord)
+                .addComponent(labelXRotation)
+                .addComponent(inputXRotation)
+                .addComponent(labelXSize)
+                .addComponent(inputXSize))
+            .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(labelYCoord)
+                .addComponent(inputYCoord)
+                .addComponent(labelYRotation)
+                .addComponent(inputYRotation)
+                .addComponent(labelYSize)
+                .addComponent(inputYSize))
+            .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                .addComponent(labelZCoord)
+                .addComponent(inputZCoord)
+                .addComponent(labelZRotation)
+                .addComponent(inputZRotation)
+                .addComponent(labelZSize)
+                .addComponent(inputZSize))
+        );
+        
+        rightPanel = new JPanel();
 
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addComponent(labelYCoord)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputYCoord))
-
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addComponent(labelXCoord)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputXCoord)))
-
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-
-                .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                    .addGroup(wLayout.createSequentialGroup()
-                    .addComponent(labelYSize)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputYSize, GroupLayout.DEFAULT_SIZE, 81, Short.MAX_VALUE))
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addComponent(labelZRotation)
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addComponent(inputZRotation))
-                    .addGroup(wLayout.createSequentialGroup()
-                        .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(labelXRotation)
-                            .addComponent(labelYRotation))
-
-                        .addPreferredGap(ComponentPlacement.RELATED)
-                        .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                            .addComponent(inputXRotation)
-                            .addComponent(inputYRotation))))
-                    .addContainerGap()));
-
-        wLayout.setVerticalGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addGroup(wLayout.createSequentialGroup().addContainerGap()
-                .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(wLayout
-                    .createSequentialGroup()
-                    .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                            .addComponent(labelXCoord)
-                            .addComponent(inputXCoord, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                        .addComponent(inputXRotation, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                    
-                    .addPreferredGap(ComponentPlacement.RELATED)
-
-                    .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                        .addComponent(labelYCoord)
-                        .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                            .addComponent(inputYCoord, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                            .addComponent(labelYRotation)
-                            .addComponent(inputYRotation, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))))
-                    .addComponent(labelXRotation))
-
-                .addPreferredGap(ComponentPlacement.RELATED)
-
-                .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(labelZCoord)
-                    .addComponent(inputZCoord, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                    .addComponent(labelZRotation)
-                    .addComponent(inputZRotation, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-
-                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-
-                .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(labelXSize)
-                    .addComponent(inputXSize, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-                    .addComponent(labelYSize)
-                    .addComponent(inputYSize, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                
-                .addPreferredGap(ComponentPlacement.RELATED)
-
-                .addGroup(wLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                    .addComponent(labelZSize)
-                    .addComponent(inputZSize, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-                .addContainerGap()));
+        JSplitPane codeSplitter = new JSplitPane(JSplitPane.VERTICAL_SPLIT, codePanel, rightPanel);
+        codeSplitter.setOneTouchExpandable(true);
+        codeSplitter.setDividerLocation(400);
 
         GroupLayout rightLayout = new GroupLayout(rightPanel);
         rightPanel.setLayout(rightLayout);
 
         rightLayout.setHorizontalGroup(rightLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(codePanel)
-            .addComponent(mainTabPanel, GroupLayout.Alignment.TRAILING)
-            .addComponent(wPanel, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE));
+            .addComponent(widgetsPanel)
+            .addComponent(mainTabPanel));
 
         rightLayout.setVerticalGroup(rightLayout.createSequentialGroup()
-            .addComponent(codePanel)
-            .addComponent(wPanel, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-            .addComponent(mainTabPanel, GroupLayout.DEFAULT_SIZE, 350, Short.MAX_VALUE));
+            .addComponent(widgetsPanel)
+            .addComponent(mainTabPanel));
 
         containerPanel.setLayout(new java.awt.BorderLayout());
 
@@ -426,7 +381,7 @@ public final class MainForm extends javax.swing.JFrame {
 
         containerPanel.add(glPanel, java.awt.BorderLayout.CENTER);
         
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, containerPanel, rightPanel);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, containerPanel, codeSplitter);
         splitPane.setOneTouchExpandable(true);
         splitPane.setDividerLocation(900);
         // Set the split pane as the central widget
@@ -578,7 +533,7 @@ public final class MainForm extends javax.swing.JFrame {
         selectedEntities.clear();
     }
 
-    private void resetCamMenuActionPerformed(java.awt.event.ActionEvent evt) {
+    private void resetCamMenuActionPerformed(ActionEvent evt) {
         scene.adjustCameraToSimulation(scene, getGLAspect());
         needUpdate();
     }
@@ -600,53 +555,53 @@ public final class MainForm extends javax.swing.JFrame {
         needUpdate();
     }
 
-    private void xTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void xTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.xField, inputXCoord.getText());
     }
 
-    private void rxTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void rxTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.rxField, inputXRotation.getText());
     }
 
-    private void yTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void yTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.yField, inputYCoord.getText());
     }
 
-    private void ryTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void ryTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.ryField, inputYRotation.getText());
     }
 
-    private void zTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void zTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.zField, inputZCoord.getText());
     }
 
-    private void rzTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void rzTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.rzField, inputZRotation.getText());
     }
 
-    private void sxTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void sxTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.sxField, inputXSize.getText());
     }
 
-    private void syTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void syTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.syField, inputYSize.getText());
     }
 
-    private void szTextActionPerformed(java.awt.event.ActionEvent evt) {
+    private void szTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.szField, inputZCoord.getText());
     }
 
-    private void sxTextFocusGained(java.awt.event.FocusEvent evt) {
+    private void sxTextFocusGained(FocusEvent evt) {
         // changeSlider(FieldsToChange.sxField, "SX", scene.maxDistanceBoundary() /
         // 8.0f);
     }
 
-    private void syTextFocusGained(java.awt.event.FocusEvent evt) {
+    private void syTextFocusGained(FocusEvent evt) {
         // changeSlider(FieldsToChange.syField, "SY", scene.maxDistanceBoundary() /
         // 8.0f);
     }
 
-    private void szTextFocusGained(java.awt.event.FocusEvent evt) {
+    private void szTextFocusGained(FocusEvent evt) {
         // changeSlider(FieldsToChange.szField, "SZ", scene.maxDistanceBoundary() /
         // 8.0f);
     }
@@ -657,19 +612,18 @@ public final class MainForm extends javax.swing.JFrame {
         scene.getEntities().add(me);
     }
 
-    private void camViewMenuActionPerformed(java.awt.event.ActionEvent evt) {
-        showNewFrame(new TransformForm(scene.getCamera().getTransform(), this));
+    private void camViewMenuActionPerformed(ActionEvent evt) {
+        JFrame frame = new TransformForm(scene.getCamera().getTransform(), this);
+        frame.setLocationRelativeTo(this);
+        frame.setVisible(true);
     }
 
-    private void unlockCameraMenuActionPerformed(java.awt.event.ActionEvent evt) {
+    private void unlockCameraMenuActionPerformed(ActionEvent evt) {
         cameraFixed = !cameraFixed;
     }
 
-    private void cameraMovMenuActionPerformed(java.awt.event.ActionEvent evt) {
-        showNewFrame(new CameraMoveFrame(this));
-    }
-
-    private void showNewFrame(final JFrame frame) {
+    private void cameraMovMenuActionPerformed(ActionEvent evt) {
+        JFrame frame = new CameraMoveFrame(this);
         frame.setLocationRelativeTo(this);
         frame.setVisible(true);
     }
@@ -806,5 +760,14 @@ public final class MainForm extends javax.swing.JFrame {
 
             updateTextField = false;
         }
+    }
+
+    public void setUpServer(int port) {
+        server = new TCPServer(this, port);
+        server.start();
+    }
+
+    public void setUpClient(int port, String host) {
+        client = new TCPClient(this, port, host);
     }
 }

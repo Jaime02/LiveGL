@@ -8,6 +8,8 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import gui.MainForm;
 import renderer.Shader;
 import scene.Resources;
+import utils.TCPServer;
+import java.io.IOException;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -22,11 +24,17 @@ public class CodePanel extends JPanel {
 
     public RSyntaxTextArea fragmentShaderEditor, vertexShaderEditor;
     public JCheckBox liveMode;
+    public Boolean serverMode;
+    public Boolean onlineMode;
 
     public CodePanel(MainForm mainForm) {
         this.mainForm = mainForm;
+        this.serverMode = false;
+        this.onlineMode = false;
 
         mainLayout = new GroupLayout(this);
+        mainLayout.setAutoCreateGaps(true);
+        mainLayout.setAutoCreateContainerGaps(true);
         setLayout(mainLayout);
         
         liveMode = new JCheckBox("Live Mode");
@@ -48,6 +56,26 @@ public class CodePanel extends JPanel {
                     mainForm.renderer.activeShader.updateFragmentShaderSourceCode(fragmentShaderEditor.getText());
                     mainForm.renderer.reloadShaders();
                     mainForm.glPanel.repaint();
+                    
+                    if (!onlineMode) {
+                        return;
+                    }
+
+                    if (serverMode) {
+                        for (TCPServer.ClientThread client : mainForm.server.clients) {
+                            try {
+                                client.out.writeUTF("f" + fragmentShaderEditor.getText());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } else {
+                        try {
+                            mainForm.client.out.writeUTF("f" + fragmentShaderEditor.getText());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
         });
@@ -60,6 +88,22 @@ public class CodePanel extends JPanel {
                     mainForm.renderer.activeShader.updateVertexShaderSourceCode(vertexShaderEditor.getText());
                     mainForm.renderer.reloadShaders();
                     mainForm.glPanel.repaint();
+
+                    if (serverMode) {
+                        for (TCPServer.ClientThread client : mainForm.server.clients) {
+                            try {
+                                client.out.writeUTF("v" + vertexShaderEditor.getText());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } else {
+                        try {
+                            mainForm.client.out.writeUTF("v" + vertexShaderEditor.getText());
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
         });
@@ -99,7 +143,7 @@ public class CodePanel extends JPanel {
 
     private void changeShader(java.awt.event.ActionEvent evt) {
         String name = shaderComboBox.getSelectedItem().toString();
-        
+
         for (Shader shader : Resources.shaders) {
             if (shader.name.equals(name)) {
                 mainForm.renderer.activeShader = shader;
@@ -114,7 +158,7 @@ public class CodePanel extends JPanel {
         throw new RuntimeException("Shader not found");
     }
 
-    public void updateShaders() {
+    public void updateAvailableShaders() {
         shaderComboBox.removeAllItems();
 
         for (Shader shader : Resources.shaders) {

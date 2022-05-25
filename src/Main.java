@@ -8,6 +8,7 @@ public class Main {
         final MainForm t = new MainForm();
         t.setExtendedState(t.getExtendedState() | JFrame.MAXIMIZED_BOTH);
         t.setVisible(true);
+        t.networkConfigWindow.setVisible(true);
     }
 
     private static void setStyle() {
