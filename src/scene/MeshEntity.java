@@ -6,11 +6,11 @@ import math.Vector3f;
 import shapes.Mesh;
 
 
-public class MeshEntity extends Entity{
+public class MeshEntity extends Entity {
     public float distanceToCamera;
     public int renderingOrder;
     
-    String mesh;
+    public String mesh;
     boolean visible = true;
     boolean doubledSided = false;
     

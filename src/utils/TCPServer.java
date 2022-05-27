@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import gui.MainForm;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -36,7 +37,7 @@ public class TCPServer extends Thread {
         final LinkedList<ClientThread> clients;
         final Socket socket;
 
-        public DataOutputStream out;
+        private DataOutputStream out;
 
         public ClientThread(LinkedList<ClientThread> clients, Socket socket) {
             this.clients = clients;
@@ -65,7 +66,7 @@ public class TCPServer extends Thread {
                     
                     for (ClientThread client : clients) {
                         if (client != this) {
-                            client.out.writeUTF(shader);
+                            client.send(shader);
                         }
                     }
                 }
@@ -88,6 +89,14 @@ public class TCPServer extends Thread {
                 synchronized (clients) {
                     clients.remove(this);
                 }
+            }
+        }
+
+        public void send(String message) {
+            try {
+                out.writeUTF(message);
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
         }
     }

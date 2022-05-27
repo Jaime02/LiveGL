@@ -93,7 +93,15 @@ public class CreateEntitiesPanel extends JPanel {
 
         mainForm.needUpdate();
     }
-
+    
+    private void addSphereButtonActionPerformed(ActionEvent evt) {
+        MeshEntity me = new MeshEntity(Resources.MESH_SPHERE);
+        me.setTag(Entity.TAG_OBJ);
+        me.setColor(CustomColor.WHITE);
+        mainForm.addMeshEntityToSceneCenterAndResizeIt(me);
+        mainForm.needUpdate();
+    }
+    
     private void deleteButtonActionPerformed(ActionEvent evt) {
         // Remove from simulation and scene
         for (Entity e : mainForm.selectedEntities) {
@@ -102,14 +110,6 @@ public class CreateEntitiesPanel extends JPanel {
             }
         }
         mainForm.clearSelection();
-        mainForm.needUpdate();
-    }
-
-    private void addSphereButtonActionPerformed(ActionEvent evt) {
-        MeshEntity me = new MeshEntity(Resources.MESH_SPHERE);
-        me.setTag(Entity.TAG_OBJ);
-        me.setColor(CustomColor.WHITE);
-        mainForm.addMeshEntityToSceneCenterAndResizeIt(me);
         mainForm.needUpdate();
     }
 

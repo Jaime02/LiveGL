@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import gui.MainForm;
 
 public class TCPClient {
-    public DataOutputStream out;
+    private DataOutputStream out;
     private MainForm mainForm;
 
     public TCPClient(MainForm mainForm, int port, String host) {
@@ -57,6 +57,15 @@ public class TCPClient {
                 }
             }
         };
+
         receiveThread.start();
+    }
+
+    public void send(String message) {
+        try {
+            out.writeUTF(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

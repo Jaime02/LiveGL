@@ -39,17 +39,16 @@ public class CodePanel extends JPanel {
         
         liveMode = new JCheckBox("Live Mode");
         JButton compileButton = new JButton("Compile shaders");
-        compileButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        compileButton.addActionListener(evt -> {
                 mainForm.renderer.activeShader.updateFragmentShaderSourceCode(fragmentShaderEditor.getText());
                 mainForm.renderer.activeShader.updateVertexShaderSourceCode(vertexShaderEditor.getText());
                 mainForm.renderer.reloadShaders();
                 mainForm.glPanel.repaint();
-            }
         });
 
         fragmentShaderEditor = new RSyntaxTextArea();
         fragmentShaderEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_C);
+        // It seems like key listeners can not take lambdas
         fragmentShaderEditor.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 if (liveMode.isSelected()) {
@@ -57,25 +56,7 @@ public class CodePanel extends JPanel {
                     mainForm.renderer.reloadShaders();
                     mainForm.glPanel.repaint();
                     
-                    if (!onlineMode) {
-                        return;
-                    }
-
-                    if (serverMode) {
-                        for (TCPServer.ClientThread client : mainForm.server.clients) {
-                            try {
-                                client.out.writeUTF("f" + fragmentShaderEditor.getText());
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    } else {
-                        try {
-                            mainForm.client.out.writeUTF("f" + fragmentShaderEditor.getText());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                    sendToClients("f" + fragmentShaderEditor.getText());
                 }
             }
         });
@@ -89,21 +70,7 @@ public class CodePanel extends JPanel {
                     mainForm.renderer.reloadShaders();
                     mainForm.glPanel.repaint();
 
-                    if (serverMode) {
-                        for (TCPServer.ClientThread client : mainForm.server.clients) {
-                            try {
-                                client.out.writeUTF("v" + vertexShaderEditor.getText());
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    } else {
-                        try {
-                            mainForm.client.out.writeUTF("v" + vertexShaderEditor.getText());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                    sendToClients("v" + vertexShaderEditor.getText());
                 }
             }
         });
@@ -139,6 +106,21 @@ public class CodePanel extends JPanel {
                 .addComponent(liveMode)
                 .addComponent(compileButton)
                 .addComponent(shaderComboBox)));
+    }
+
+    public void sendToClients(String text) {
+        if (!onlineMode) {
+            return;
+        }
+
+        if (serverMode) {
+            for (TCPServer.ClientThread client : mainForm.server.clients) {
+                client.send(text);
+            }
+
+        } else {
+            mainForm.client.send(text);
+        }
     }
 
     private void changeShader(java.awt.event.ActionEvent evt) {
