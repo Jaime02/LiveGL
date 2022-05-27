@@ -223,7 +223,7 @@ public class Scene {
         return null;
     }
 
-    public Entity getFirstWithTag(int tag) {
+    public MeshEntity getFirstWithTag(int tag) {
         for (MeshEntity e : entities) {
             if ((e.getTag() & tag) != 0) {
                 return e;

@@ -25,7 +25,6 @@ public class Entity {
     int number;
     public boolean selected;
 
-
     public Entity() {
         tag = TAG_NONE;
         color = CustomColor.WHITE;

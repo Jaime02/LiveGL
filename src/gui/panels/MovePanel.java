@@ -225,7 +225,7 @@ public class MovePanel extends javax.swing.JPanel {
         final int n = 0;
 
         // check bead number n in selection
-        final ArrayList<Entity> sel = mainForm.selectedEntities;
+        final ArrayList<MeshEntity> sel = mainForm.selectedEntities;
         if (n < 0 || n >= sel.size()) {
             return null;
         }
@@ -319,7 +319,7 @@ public class MovePanel extends javax.swing.JPanel {
     }
 
     public void resetParticlePos() {
-        final ArrayList<Entity> sel = mainForm.selectedEntities;
+        final ArrayList<MeshEntity> sel = mainForm.selectedEntities;
         final int n = M.min(sel.size(), snapBeadPositions.size());
         for (int i = 0; i < n; ++i) {
             sel.get(i).getTransform().getTranslation().set(snapBeadPositions.get(i));
@@ -329,10 +329,11 @@ public class MovePanel extends javax.swing.JPanel {
     }
 
     public void selectFirstBead() {
-        Entity e = mainForm.scene.getFirstWithTag(Entity.TAG_CONTROL_POINT);
+        MeshEntity e = mainForm.scene.getFirstWithTag(Entity.TAG_CONTROL_POINT);
         if (e == null) {
             return;
         }
+        
         mainForm.clearSelection();
         mainForm.selectedEntities.add(e);
         e.selected = true;

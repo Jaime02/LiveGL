@@ -47,7 +47,7 @@ import java.awt.event.MouseEvent;
 
 
 public final class MainForm extends JFrame {
-    public final ArrayList<Entity> selectedEntities = new ArrayList<>();
+    public final ArrayList<MeshEntity> selectedEntities = new ArrayList<>();
 
     boolean cameraFixed, glInitialized;
 
@@ -75,6 +75,7 @@ public final class MainForm extends JFrame {
     public NetworkConfigWindow networkConfigWindow;
     public TCPServer server;
     public TCPClient client;
+    private int idCounter = 0;
 
     public enum FieldsToChange {
         xField, yField, zField, rxField, ryField, rzField, sxField, syField, szField
@@ -218,7 +219,7 @@ public final class MainForm extends JFrame {
             }
         });
         menuCamera.add(cameraMovementMenu);
-        
+
 
         inputXRotation.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -297,56 +298,30 @@ public final class MainForm extends JFrame {
         widgetsPanel.setLayout(widgetsLayout);
 
         widgetsLayout.setHorizontalGroup(widgetsLayout.createSequentialGroup()
-            .addGroup(widgetsLayout.createParallelGroup()
-                .addComponent(labelXCoord)
-                .addComponent(labelYCoord)
-                .addComponent(labelZCoord))
-            .addGroup(widgetsLayout.createParallelGroup()
-                .addComponent(inputXCoord)
-                .addComponent(inputYCoord)
-                .addComponent(inputZCoord))
-            .addGroup(widgetsLayout.createParallelGroup()
-                .addComponent(labelXRotation)
-                .addComponent(labelYRotation)
-                .addComponent(labelZRotation))
-            .addGroup(widgetsLayout.createParallelGroup()
-                .addComponent(inputXRotation)
-                .addComponent(inputYRotation)
-                .addComponent(inputZRotation))
-            .addGroup(widgetsLayout.createParallelGroup()
-                .addComponent(labelXSize)
-                .addComponent(labelYSize)
-                .addComponent(labelZSize))
-            .addGroup(widgetsLayout.createParallelGroup()
-                .addComponent(inputXSize)
-                .addComponent(inputYSize)
-                .addComponent(inputZSize))
-        );
+                .addGroup(widgetsLayout.createParallelGroup().addComponent(labelXCoord).addComponent(labelYCoord)
+                        .addComponent(labelZCoord))
+                .addGroup(widgetsLayout.createParallelGroup().addComponent(inputXCoord).addComponent(inputYCoord)
+                        .addComponent(inputZCoord))
+                .addGroup(widgetsLayout.createParallelGroup().addComponent(labelXRotation).addComponent(labelYRotation)
+                        .addComponent(labelZRotation))
+                .addGroup(widgetsLayout.createParallelGroup().addComponent(inputXRotation).addComponent(inputYRotation)
+                        .addComponent(inputZRotation))
+                .addGroup(widgetsLayout.createParallelGroup().addComponent(labelXSize).addComponent(labelYSize)
+                        .addComponent(labelZSize))
+                .addGroup(widgetsLayout.createParallelGroup().addComponent(inputXSize).addComponent(inputYSize)
+                        .addComponent(inputZSize)));
 
         widgetsLayout.setVerticalGroup(widgetsLayout.createSequentialGroup()
-            .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                .addComponent(labelXCoord)
-                .addComponent(inputXCoord)
-                .addComponent(labelXRotation)
-                .addComponent(inputXRotation)
-                .addComponent(labelXSize)
-                .addComponent(inputXSize))
-            .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                .addComponent(labelYCoord)
-                .addComponent(inputYCoord)
-                .addComponent(labelYRotation)
-                .addComponent(inputYRotation)
-                .addComponent(labelYSize)
-                .addComponent(inputYSize))
-            .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-                .addComponent(labelZCoord)
-                .addComponent(inputZCoord)
-                .addComponent(labelZRotation)
-                .addComponent(inputZRotation)
-                .addComponent(labelZSize)
-                .addComponent(inputZSize))
-        );
-        
+                .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(labelXCoord)
+                        .addComponent(inputXCoord).addComponent(labelXRotation).addComponent(inputXRotation)
+                        .addComponent(labelXSize).addComponent(inputXSize))
+                .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(labelYCoord)
+                        .addComponent(inputYCoord).addComponent(labelYRotation).addComponent(inputYRotation)
+                        .addComponent(labelYSize).addComponent(inputYSize))
+                .addGroup(widgetsLayout.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(labelZCoord)
+                        .addComponent(inputZCoord).addComponent(labelZRotation).addComponent(inputZRotation)
+                        .addComponent(labelZSize).addComponent(inputZSize)));
+
         rightPanel = new JPanel();
 
         JSplitPane codeSplitter = new JSplitPane(JSplitPane.VERTICAL_SPLIT, codePanel, rightPanel);
@@ -357,12 +332,10 @@ public final class MainForm extends JFrame {
         rightPanel.setLayout(rightLayout);
 
         rightLayout.setHorizontalGroup(rightLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
-            .addComponent(widgetsPanel)
-            .addComponent(mainTabPanel));
+                .addComponent(widgetsPanel).addComponent(mainTabPanel));
 
-        rightLayout.setVerticalGroup(rightLayout.createSequentialGroup()
-            .addComponent(widgetsPanel)
-            .addComponent(mainTabPanel));
+        rightLayout.setVerticalGroup(
+                rightLayout.createSequentialGroup().addComponent(widgetsPanel).addComponent(mainTabPanel));
 
         containerPanel.setLayout(new java.awt.BorderLayout());
 
@@ -380,7 +353,7 @@ public final class MainForm extends JFrame {
         });
 
         containerPanel.add(glPanel, java.awt.BorderLayout.CENTER);
-        
+
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, containerPanel, codeSplitter);
         splitPane.setOneTouchExpandable(true);
         splitPane.setDividerLocation(900);
@@ -392,7 +365,8 @@ public final class MainForm extends JFrame {
 
     protected void createShaders() {
         // Get the name of the shader file using a message box
-        String shaderFileName = JOptionPane.showInputDialog(this, "Enter the name of the shader file", "Shader File Name", JOptionPane.QUESTION_MESSAGE);
+        String shaderFileName = JOptionPane.showInputDialog(this, "Enter the name of the shader file",
+                "Shader File Name", JOptionPane.QUESTION_MESSAGE);
         if (shaderFileName == null) {
             return;
         }
@@ -401,7 +375,9 @@ public final class MainForm extends JFrame {
         try {
             File vertexShaderFile = new File("src/shaders/" + shaderFileName + ".vsh");
             if (vertexShaderFile.exists()) {
-                int result = JOptionPane.showConfirmDialog(this, "The file " + shaderFileName + ".vsh already exists. Do you want to overwrite it?", "Overwrite File?", JOptionPane.YES_NO_OPTION);
+                int result = JOptionPane.showConfirmDialog(this,
+                        "The file " + shaderFileName + ".vsh already exists. Do you want to overwrite it?",
+                        "Overwrite File?", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.NO_OPTION) {
                     return;
                 }
@@ -410,11 +386,13 @@ public final class MainForm extends JFrame {
 
             // Write a basic vertex shader source code in the file
             FileWriter fw = new FileWriter(vertexShaderFile);
-            fw.write("attribute vec4 vertexPosition;\n\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main()\n{\n    gl_Position = modelViewProjectionMatrix * vertexPosition;\n}");
+            fw.write(
+                    "attribute vec4 vertexPosition;\n\nuniform mat4 modelViewProjectionMatrix;\n\nvoid main()\n{\n    gl_Position = modelViewProjectionMatrix * vertexPosition;\n}");
             fw.close();
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Error creating shader file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error creating shader file: " + e.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -422,7 +400,9 @@ public final class MainForm extends JFrame {
         try {
             File fragmentShaderFile = new File("src/shaders/" + shaderFileName + ".fsh");
             if (fragmentShaderFile.exists()) {
-                int result = JOptionPane.showConfirmDialog(this, "The file " + shaderFileName + ".fsh already exists. Do you want to overwrite it?", "Overwrite File?", JOptionPane.YES_NO_OPTION);
+                int result = JOptionPane.showConfirmDialog(this,
+                        "The file " + shaderFileName + ".fsh already exists. Do you want to overwrite it?",
+                        "Overwrite File?", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.NO_OPTION) {
                     return;
                 }
@@ -435,10 +415,11 @@ public final class MainForm extends JFrame {
             fw.close();
 
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Error creating shader file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error creating shader file: " + e.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         // Trigger init method of glPanel
         initOpenGL();
         codePanel.shaderComboBox.addItem(shaderFileName);
@@ -455,13 +436,13 @@ public final class MainForm extends JFrame {
         Scene.removeWithTag(scene.getEntities(), Entity.TAG_SLICE);
 
         // just add a basic cube and sphere
-        MeshEntity me = new MeshEntity(Resources.MESH_BOX);
+        MeshEntity me = new MeshEntity(generateId(), Resources.MESH_BOX);
         me.getTransform().getScale().set(0.1f);
         me.setTag(Entity.TAG_OBJ);
         me.setColor(CustomColor.RED);
         scene.getEntities().add(me);
 
-        MeshEntity me2 = new MeshEntity(Resources.MESH_SPHERE);
+        MeshEntity me2 = new MeshEntity(generateId(), Resources.MESH_SPHERE);
         me2.getTransform().getScale().set(0.12f);
         me2.getTransform().getTranslation().set(0.2f, 0, 0);
         me2.setTag(Entity.TAG_OBJ);
@@ -471,6 +452,11 @@ public final class MainForm extends JFrame {
         adjustGUIGainAndCameras();
 
         needUpdate();
+    }
+
+    public int generateId() {
+        idCounter++;
+        return idCounter;
     }
 
     public void adjustGUIGainAndCameras() {
@@ -542,6 +528,7 @@ public final class MainForm extends JFrame {
         if (text.length() < 1) {
             return;
         }
+
         boolean absolute;
         float value;
         if (text.charAt(0) == 'a') {
@@ -559,20 +546,20 @@ public final class MainForm extends JFrame {
         updateTransForField(FieldsToChange.xField, inputXCoord.getText());
     }
 
-    private void rxTextActionPerformed(ActionEvent evt) {
-        updateTransForField(FieldsToChange.rxField, inputXRotation.getText());
-    }
-
     private void yTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.yField, inputYCoord.getText());
     }
 
-    private void ryTextActionPerformed(ActionEvent evt) {
-        updateTransForField(FieldsToChange.ryField, inputYRotation.getText());
-    }
-
     private void zTextActionPerformed(ActionEvent evt) {
         updateTransForField(FieldsToChange.zField, inputZCoord.getText());
+    }
+
+    private void rxTextActionPerformed(ActionEvent evt) {
+        updateTransForField(FieldsToChange.rxField, inputXRotation.getText());
+    }
+
+    private void ryTextActionPerformed(ActionEvent evt) {
+        updateTransForField(FieldsToChange.ryField, inputYRotation.getText());
     }
 
     private void rzTextActionPerformed(ActionEvent evt) {
@@ -588,7 +575,7 @@ public final class MainForm extends JFrame {
     }
 
     private void szTextActionPerformed(ActionEvent evt) {
-        updateTransForField(FieldsToChange.szField, inputZCoord.getText());
+        updateTransForField(FieldsToChange.szField, inputZSize.getText());
     }
 
     private void sxTextFocusGained(FocusEvent evt) {
@@ -606,9 +593,20 @@ public final class MainForm extends JFrame {
         // 8.0f);
     }
 
-    public void addMeshEntityToSceneCenterAndResizeIt(MeshEntity me) {
+    public void addMeshEntityToSceneCenterAndResizeIt(int id, MeshEntity me) {
         me.getTransform().getTranslation().set(scene.getSimulationCenter());
         me.getTransform().getScale().set(scene.maxDistanceBoundary());
+
+        codePanel.sendToClients("entityCreate " 
+            + id + " "  
+            + me.mesh + " " 
+            + me.getTransform().getTranslation().x + " "
+            + me.getTransform().getTranslation().y + " " 
+            + me.getTransform().getTranslation().z + " "
+            + me.getTransform().getScale().x + " " 
+            + me.getTransform().getScale().y + " "
+            + me.getTransform().getScale().z + " ");
+
         scene.getEntities().add(me);
     }
 
@@ -665,7 +663,8 @@ public final class MainForm extends JFrame {
 
         tags = addTagsForSelectionFilter(tags);
 
-        Entity e = scene.pickObject(lastX / (float)glPanel.getWidth(), 1.0f - lastY / (float)glPanel.getHeight(), tags);
+        MeshEntity e =
+                scene.pickObject(lastX / (float)glPanel.getWidth(), 1.0f - lastY / (float)glPanel.getHeight(), tags);
 
         clearSelection();
 
@@ -699,7 +698,7 @@ public final class MainForm extends JFrame {
     private void changeSelectionField(FieldsToChange field, float value, boolean absolute, boolean updateTextField) {
         final Vector3f angles = new Vector3f();
 
-        for (Entity e : selectedEntities) {
+        for (MeshEntity e : selectedEntities) {
             Transform tra = e.getTransform();
 
             if (field == FieldsToChange.xField) {
@@ -707,32 +706,39 @@ public final class MainForm extends JFrame {
                 if (updateTextField) {
                     inputXCoord.setText(StringFormats.get().dc4(tra.getTranslation().x));
                 }
+
             } else if (field == FieldsToChange.yField) {
                 tra.getTranslation().y = absolute ? value : tra.getTranslation().y + value;
                 if (updateTextField) {
                     inputYCoord.setText(StringFormats.get().dc4(tra.getTranslation().y));
                 }
+
             } else if (field == FieldsToChange.zField) {
                 tra.getTranslation().z = absolute ? value : tra.getTranslation().z + value;
                 if (updateTextField) {
                     inputZCoord.setText(StringFormats.get().dc4(tra.getTranslation().z));
                 }
+
             } else if (field == FieldsToChange.sxField) {
                 tra.getScale().x = absolute ? value : tra.getScale().x + value;
                 if (updateTextField) {
                     inputXSize.setText(StringFormats.get().dc4(tra.getScale().x));
                 }
+
             } else if (field == FieldsToChange.syField) {
                 tra.getScale().y = absolute ? value : tra.getScale().y + value;
                 if (updateTextField) {
                     inputYSize.setText(StringFormats.get().dc4(tra.getScale().y));
                 }
+
             } else if (field == FieldsToChange.szField) {
                 tra.getScale().z = absolute ? value : tra.getScale().z + value;
                 if (updateTextField) {
                     inputZSize.setText(StringFormats.get().dc4(tra.getScale().z));
                 }
-            } else if (field == FieldsToChange.rxField || field == FieldsToChange.ryField
+
+            } else if (field == FieldsToChange.rxField 
+                    || field == FieldsToChange.ryField
                     || field == FieldsToChange.rzField) {
 
                 float rads = value * M.DEG_TO_RAD;
@@ -757,6 +763,12 @@ public final class MainForm extends JFrame {
                 }
                 q.fromAngles(angles);
             }
+            
+            Vector3f t = tra.getTranslation();
+            Vector3f r = tra.getRotation().toAngles(null);
+            Vector3f s = tra.getScale();
+
+            codePanel.sendToClients("entityTransform " + e.id + " " + t.x + " " + t.y + " " + t.z + " " + r.x + " " + r.y + " " + r.z + " " + s.x + " " + s.y + " " + s.z);
 
             updateTextField = false;
         }

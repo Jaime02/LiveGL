@@ -6,7 +6,7 @@ import math.Matrix4f;
 import math.Vector3f;
 
 
-public class Camera extends Entity{
+public class Camera extends Entity {
     Matrix4f projection;
     float fov;
     float near, far;
@@ -18,6 +18,7 @@ public class Camera extends Entity{
     
     public Camera() {
         super();
+
         fov = 45;
         ortho = true;
         near = 1.0f;
@@ -151,6 +152,4 @@ public class Camera extends Entity{
             inclination = M.PI - margin;
         }
     }
-    
-    
 }

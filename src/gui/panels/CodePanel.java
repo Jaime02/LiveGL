@@ -9,7 +9,6 @@ import gui.MainForm;
 import renderer.Shader;
 import scene.Resources;
 import utils.TCPServer;
-import java.io.IOException;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;

@@ -15,8 +15,10 @@ public class MeshEntity extends Entity {
     boolean doubledSided = false;
     
     public Mesh customMesh;
+    public int id;
 
-    public MeshEntity(String mesh) {
+    public MeshEntity(int id, String mesh) {
+        this.id = id;
         this.mesh = mesh;
     }
     

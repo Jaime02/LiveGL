@@ -1,6 +1,9 @@
 package gui.panels;
 
 import gui.MainForm;
+import math.M;
+import math.Quaternion;
+import math.Vector3f;
 import scene.Entity;
 import scene.MeshEntity;
 import scene.Resources;
@@ -86,29 +89,98 @@ public class CreateEntitiesPanel extends JPanel {
     }
 
     private void addCubeButtonActionPerformed(ActionEvent evt) {
-        MeshEntity me = new MeshEntity(Resources.MESH_BOX);
+        int id = mainForm.generateId();
+        MeshEntity me = new MeshEntity(id, Resources.MESH_BOX);
         me.setTag(Entity.TAG_OBJ);
         me.setColor(CustomColor.WHITE);
-        mainForm.addMeshEntityToSceneCenterAndResizeIt(me);
+        mainForm.addMeshEntityToSceneCenterAndResizeIt(id, me);
 
         mainForm.needUpdate();
     }
-    
-    private void addSphereButtonActionPerformed(ActionEvent evt) {
-        MeshEntity me = new MeshEntity(Resources.MESH_SPHERE);
+
+    public void createEntityFromString(String[] args) {
+        int id = Integer.valueOf(args[1]);
+        String mesh = args[2];
+        float tx = Float.valueOf(args[3]);
+        float ty = Float.valueOf(args[4]);
+        float tz = Float.valueOf(args[5]);
+        float sx = Float.valueOf(args[6]);
+        float sy = Float.valueOf(args[7]);
+        float sz = Float.valueOf(args[8]);
+        MeshEntity me = new MeshEntity(id, mesh);
         me.setTag(Entity.TAG_OBJ);
         me.setColor(CustomColor.WHITE);
-        mainForm.addMeshEntityToSceneCenterAndResizeIt(me);
+        me.getTransform().getTranslation().set(tx, ty, tz);
+        // TODO Fix quaternion rotation
+        // me.getTransform().getRotation().set(rx, ry, rz, 0);
+        me.getTransform().getScale().set(sx, sy, sz);
+        mainForm.needUpdate();
+        mainForm.scene.getEntities().add(me);
+    };
+
+    public void deleteEntityFromString(String[] args) {
+        int id = Integer.valueOf(args[1]);
+        for (MeshEntity e : mainForm.scene.getEntities()) {
+            if (e.getTag() == Entity.TAG_OBJ && e.id == id) {
+                mainForm.scene.getEntities().remove(e);
+                mainForm.needUpdate();
+                return;
+            }
+        }
+        System.out.println("Entity with id " + id + " not found");
+    };
+    
+    public void transformEntityFromString(String[] args) {
+        int id = Integer.valueOf(args[1]);
+        Float tx = Float.valueOf(args[2]);
+        Float ty = Float.valueOf(args[3]);
+        Float tz = Float.valueOf(args[4]);
+        Float rx = Float.valueOf(args[5]);
+        Float ry = Float.valueOf(args[6]);
+        Float rz = Float.valueOf(args[7]);
+        Float sx = Float.valueOf(args[8]);
+        Float sy = Float.valueOf(args[9]);
+        Float sz = Float.valueOf(args[10]);
+        
+        for (MeshEntity e : mainForm.scene.getEntities()) {
+            if (e.getTag() == Entity.TAG_OBJ && e.id == id) {
+                e.getTransform().getTranslation().set(tx, ty, tz);
+                // TODO Fix quaternion rotation
+                e.getTransform().getRotation().set(rx, ry, rz, 0);
+
+                System.out.println("Rotation: " + rx + " " + ry + " " + rz);
+
+                Quaternion q = e.getTransform().getRotation();
+                Vector3f v = q.toAngles(new Vector3f(rx, ry, rz));
+                e.getTransform().getRotation().set(q.fromAngles(v));
+
+                e.getTransform().getScale().set(sx, sy, sz);
+                mainForm.needUpdate();
+                return;
+            }
+        }
+        System.out.println("Entity not found!");
+    }
+
+
+    private void addSphereButtonActionPerformed(ActionEvent evt) {
+        int id = mainForm.generateId();
+        MeshEntity me = new MeshEntity(id, Resources.MESH_SPHERE);
+        me.setTag(Entity.TAG_OBJ);
+        me.setColor(CustomColor.WHITE);
+        mainForm.addMeshEntityToSceneCenterAndResizeIt(id, me);
         mainForm.needUpdate();
     }
     
     private void deleteButtonActionPerformed(ActionEvent evt) {
         // Remove from simulation and scene
-        for (Entity e : mainForm.selectedEntities) {
+        for (MeshEntity e : mainForm.selectedEntities) {
             if (e.getTag() == Entity.TAG_OBJ) {
+                mainForm.codePanel.sendToClients("entityDelete " + e.id);
                 mainForm.scene.getEntities().remove(e);
             }
         }
+
         mainForm.clearSelection();
         mainForm.needUpdate();
     }

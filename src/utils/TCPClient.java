@@ -9,10 +9,8 @@ import gui.MainForm;
 
 public class TCPClient {
     private DataOutputStream out;
-    private MainForm mainForm;
 
     public TCPClient(MainForm mainForm, int port, String host) {
-        this.mainForm = mainForm;
         
         Socket socket;
         try {
@@ -45,11 +43,23 @@ public class TCPClient {
             public void run() {
                 try {
                     while (true) {
-                        String shader = in.readUTF();
-                        if (shader.charAt(0) == 'v') {
-                            mainForm.codePanel.vertexShaderEditor.setText(shader.substring(1));
+                        String message = in.readUTF();
+                        if (message.startsWith("entity")) {
+                            String[] parts = message.split(" ");
+                            if (parts[0].equals("entityCreate")) {
+                                mainForm.createEntitiesPanel.createEntityFromString(parts);
+                            } else if (parts[0].equals("entityDelete")) {
+                                mainForm.createEntitiesPanel.deleteEntityFromString(parts);
+                            } else if (parts[0].equals("entityTransform")) {
+                                mainForm.createEntitiesPanel.transformEntityFromString(parts);
+                            } else {
+                                System.out.println("Unknown message: " + message);
+                            }
+
+                        } else if (message.charAt(0) == 'v') {
+                            mainForm.codePanel.vertexShaderEditor.setText(message.substring(1));
                         } else {
-                            mainForm.codePanel.fragmentShaderEditor.setText(shader.substring(1));
+                            mainForm.codePanel.fragmentShaderEditor.setText(message.substring(1));
                         }
                     }
                 } catch (IOException ex) {
