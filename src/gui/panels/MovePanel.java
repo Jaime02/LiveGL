@@ -48,7 +48,7 @@ public class MovePanel extends javax.swing.JPanel {
         speedText.setText("0.100");
         speedText.setToolTipText("Step size of the movements and scaling");
 
-        leftButton.setText("←");
+        leftButton.setText("Left");
         leftButton.setToolTipText("move selected points left");
         leftButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -56,7 +56,7 @@ public class MovePanel extends javax.swing.JPanel {
             }
         });
 
-        upButton.setText("↑");
+        upButton.setText("Up");
         upButton.setToolTipText("move selected points up");
         upButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -64,7 +64,7 @@ public class MovePanel extends javax.swing.JPanel {
             }
         });
 
-        rightButton.setText("→");
+        rightButton.setText("Right");
         rightButton.setToolTipText("move selected points right");
         rightButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -72,7 +72,7 @@ public class MovePanel extends javax.swing.JPanel {
             }
         });
 
-        downButton.setText("↓");
+        downButton.setText("Down");
         downButton.setToolTipText("move selected points down");
         downButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -80,7 +80,7 @@ public class MovePanel extends javax.swing.JPanel {
             }
         });
 
-        forwardButton.setText("↗");
+        forwardButton.setText("Up-right");
         forwardButton.setToolTipText("move selected points forward");
         forwardButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -88,7 +88,7 @@ public class MovePanel extends javax.swing.JPanel {
             }
         });
 
-        backwardsButton.setText("↖");
+        backwardsButton.setText("Up-left");
         backwardsButton.setToolTipText("move selected points back");
         backwardsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
